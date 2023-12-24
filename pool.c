@@ -1,6 +1,7 @@
 #include "pool.h"
 #include "include/raylib.h"
 
+
 int main(void){
 
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "pool");
