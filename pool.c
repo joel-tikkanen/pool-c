@@ -5,7 +5,8 @@
 void init_ball(int num, enum GameState gs) {
     return;
 }
-void init_balls() {
+
+void init_balls(Ball *balls[BALL_COUNT]) {
     return;
 }
 
@@ -20,28 +21,26 @@ void handle_ball_collision(Ball *ball1, Ball *ball2) {
 void handle_wall_collision(Ball *ball) {
 
 }
-void check_collisions() {
+
+void check_collisions(Ball *balls[BALL_COUNT]) {
 
 }
-void check_pockets() {
+
+void check_pockets(Ball *balls[BALL_COUNT]) {
 
 }
+
 void handle_pocket(Ball *pocketed) {
 
 }
+
 void render_ball(Ball *ball) {
 
 }
+
 void render_stick(Stick *stick) {
 
 };
-
-
-void init(){ 
-    // game initialization to starting point
-    return;
-}
-
 
 
 int main(void){
@@ -49,7 +48,7 @@ int main(void){
     enum GameState game_state = NOT_HIT;
     enum Type first_collision = NONE;
 
-    
+    Ball *balls[BALL_COUNT] = (Ball*)malloc(sizeof(Ball) * BALL_COUNT); 
 
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "pool");
     SetTargetFPS(10);
@@ -80,7 +79,7 @@ int main(void){
         EndDrawing();
     }
 
-     
+    free(balls);
     CloseWindow();
 
     return 0;
