@@ -2,11 +2,23 @@
 #include "include/raylib.h"
 
 
-void init_ball(int num, enum GameState gs) {
-    return;
+
+Ball init_ball(int num, enum Type type, float x, float y) {
+    Ball b = {0};
+
+    b.num = num;
+    b.type = type;
+    b.pocketed = false;
+    b.x = x;
+    b.y = y;
+
+    return b;
 }
 
 void init_balls(Ball *balls[BALL_COUNT]) {
+
+    
+
     return;
 }
 
@@ -34,7 +46,7 @@ void handle_pocket(Ball *pocketed) {
 
 }
 
-void render_ball(Ball *ball) {
+void render_balls(Ball *balls[BALL_COUNT]) {
 
 }
 
@@ -48,7 +60,7 @@ int main(void){
     enum GameState game_state = NOT_HIT;
     enum Type first_collision = NONE;
 
-    Ball *balls[BALL_COUNT] = (Ball*)malloc(sizeof(Ball) * BALL_COUNT); 
+    Ball* balls = (Ball*)malloc(sizeof(Ball) * BALL_COUNT);
 
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "pool");
     SetTargetFPS(10);
@@ -75,6 +87,10 @@ int main(void){
                 break;
         }
         BeginDrawing();
+        // render board
+        // render balls
+        render_balls(balls);
+        // render stick
         ClearBackground(BLACK);
         EndDrawing();
     }

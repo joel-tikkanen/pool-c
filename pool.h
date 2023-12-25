@@ -1,8 +1,11 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
-#define SCREEN_WIDTH 400
-#define SCREEN_HEIGHT 500
+#define SCREEN_WIDTH 750
+#define SCREEN_HEIGHT 400
 #define BALL_COUNT 16
+#define BALL_RADIUS 10
 
 
 enum Type {
@@ -17,13 +20,14 @@ enum GameState {
     NOT_HIT,
     HIT,
     HANDBALL
-}
+};
 
 typedef struct ball {
-    float radius;
+    int num;
+    enum Type type;
 
-    int x;
-    int y;
+    float x;
+    float y;
 
     float vx;
     float vy;
@@ -38,7 +42,7 @@ typedef struct stick {
     float x;
 } Stick;
 
-void init_ball(int num, enum GameState gs);
+Ball init_ball(int num, enum Type type, float x, float y);
 void init_balls(Ball *balls[BALL_COUNT]);
 void update_ball(Ball* ball);
 void handle_ball_collision(Ball* ball1, Ball* ball2);
@@ -46,7 +50,7 @@ void handle_wall_collision(Ball* ball);
 void check_collisions(Ball* balls[BALL_COUNT]);
 void check_pockets(Ball *balls[BALL_COUNT]);
 void handle_pocket(Ball *pocketed);
-void render_ball(Ball *ball);
+void render_balls(Ball *balls[BALL_COUNT]);
 void render_stick(Stick *stick);
 
 
