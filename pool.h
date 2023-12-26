@@ -7,9 +7,8 @@
 #define BALL_COUNT 2
 #define BALL_DIAMETER 20.0
 #define BALL_RADIUS (BALL_DIAMETER / 2.0)
-#define FPS 60
+#define FPS 1000.0
 #define FRICTION 0.5
-#define DT 1.0/FPS
 
 
 enum Type {
@@ -39,7 +38,8 @@ typedef struct ball {
     float vy;
 
     float av;
-    float a;
+    float ax;
+    float ay;
 
     bool pocketed;
 } Ball;

@@ -12,23 +12,30 @@ Ball init_ball(int num, enum Type type, float x, float y) {
     b.pocketed = false;
     b.x = x;
     b.y = y;
-    b.vx = 100;
+    b.vx = 0;
 
     return b;
 }
 void init_balls(Ball (*balls)[BALL_COUNT]) {
     (*balls)[0] = init_ball(0, SOLID, 500, 100);
     (*balls)[1] = init_ball(0, SOLID, 100, 90);
-    (*balls)[0].vx = -100;
+    (*balls)[0].vx = -150;
+    (*balls)[1].vx = 150;
     return;
 }
 
 
-void update_balls(Ball (*balls)[BALL_COUNT]) {
+void update_balls(Ball (*balls)[BALL_COUNT], float dt) {
     // only balls not pocketed
     for (int i = 0; i < BALL_COUNT; i++){
-        (*balls)[i].x += (*balls)[i].vx*DT;
-        (*balls)[i].y += (*balls)[i].vy*DT;
+        (*balls)[i].x += (*balls)[i].vx * dt;
+        (*balls)[i].y += (*balls)[i].vy * dt;
+        (*balls)[i].vx += (*balls)[i].ax * dt;
+        (*balls)[i].vy += (*balls)[i].ay * dt;
+        (*balls)[i].ax = 0.5 * -((*balls)[i].vx);
+        (*balls)[i].ay = 0.5 * -((*balls)[i].vy);
+        if (fabs((*balls)[i].vx) <= 0.1 && fabs((*balls)[i].ax) <= 0.1) (*balls)[i].vx = 0.0;
+        if (fabs((*balls)[i].vy) <= 0.1 && fabs((*balls)[i].ay) <= 0.1) (*balls)[i].vy = 0.0;
     }
     return;
 }
@@ -59,12 +66,13 @@ void handle_ball_collision(Ball *ball1, Ball *ball2) {
     float normal_x = diff_x / dist;
     float normal_y = diff_y / dist;
 
+    float offset =  (BALL_DIAMETER - dist) * 0.5;
 
     // separating balls
-    ball1->x += normal_x * BALL_RADIUS;
-    ball2->x -= normal_x * BALL_RADIUS;
-    ball1->y += normal_y * BALL_RADIUS;
-    ball2->y -= normal_y * BALL_RADIUS;
+    ball1->x += normal_x * offset;
+    ball2->x -= normal_x * offset;
+    ball1->y += normal_y * offset;
+    ball2->y -= normal_y * offset;
 
 
     // after separation
@@ -100,7 +108,7 @@ void handle_ball_collision(Ball *ball1, Ball *ball2) {
 }
 
 void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc) {
-     // only balls not pocketed
+    // only balls not pocketed
     for (int i = 0; i < BALL_COUNT; i++){
         if ((*balls)[i].pocketed) continue;
         if ((*balls)[i].x + BALL_RADIUS >= SCREEN_WIDTH || (*balls)[i].x - BALL_RADIUS <= 0) {
@@ -116,7 +124,7 @@ void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc) {
             x2 = (*balls)[j].x;
             y1 = (*balls)[i].y;
             y2 = (*balls)[j].y;
-            if (sq_distance(x1,y1, x2, y2) <= (BALL_RADIUS*BALL_RADIUS)){
+            if (sq_distance(x1,y1, x2, y2) <= (BALL_DIAMETER*BALL_DIAMETER)){
                 printf("collsion!");
                 if ((*balls)[i].num == 0 && *fc == NONE) {
                         *fc = (*balls)[j].type;
@@ -170,6 +178,7 @@ int main(void){
     enum GameState game_state = HIT;
     enum Type first_collision = NONE;
     enum Type turn = NONE;
+    float dt = 1.0/FPS;
 
     Ball (*balls)[BALL_COUNT] = malloc(sizeof(Ball[BALL_COUNT]));
 
@@ -196,9 +205,10 @@ int main(void){
                 // update ball positions
                 // check and handle collisions
                 // TODO: generalized function to position checking
-                update_balls(balls);
+                
                 check_collisions(balls, &first_collision);
                 check_pockets(balls);
+                update_balls(balls, dt);
                 // change state to NOT_HIT if no handball
                 // change state to HANDBALL if handball
                 if (!is_moving(balls)) {
@@ -232,6 +242,8 @@ int main(void){
         // render stick
         ClearBackground(BLACK);
         EndDrawing();
+
+        dt = GetFrameTime(); 
     }
 
     free(balls);
