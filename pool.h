@@ -8,6 +8,7 @@
 #define BALL_DIAMETER 20.0
 #define BALL_RADIUS (BALL_DIAMETER / 2.0)
 #define FPS 60
+#define FRICTION 0.5
 #define DT 1.0/FPS
 
 
@@ -22,7 +23,9 @@ enum Type {
 enum GameState {
     NOT_HIT,
     HIT,
-    HANDBALL
+    HANDBALL,
+    WIN_SOLID,
+    WIN_STRIPE,
 };
 
 typedef struct ball {
@@ -48,15 +51,12 @@ typedef struct stick {
 
 Ball init_ball(int num, enum Type type, float x, float y);
 void init_balls(Ball (*balls)[BALL_COUNT]);
-void update_ball(Ball* ball);
 void handle_ball_collision(Ball* ball1, Ball* ball2);
-void handle_wall_collision(Ball* ball);
-void check_collisions(Ball (*balls)[BALL_COUNT]);
+void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc);
 void check_pockets(Ball (*balls)[BALL_COUNT]);
-void handle_pocket(Ball *pocketed);
+void handle_pocket(enum Type turn, Ball *pocketed, enum GameState *gs);
 void render_balls(Ball (*balls)[BALL_COUNT]);
-void render_stick(Stick *stick);
-
+void render_stick(Stick *stick, float pos_x, float pos_y);
 
 
 

@@ -25,7 +25,7 @@ void init_balls(Ball (*balls)[BALL_COUNT]) {
 
 
 void update_balls(Ball (*balls)[BALL_COUNT]) {
-
+    // only balls not pocketed
     for (int i = 0; i < BALL_COUNT; i++){
         (*balls)[i].x += (*balls)[i].vx*DT;
         (*balls)[i].y += (*balls)[i].vy*DT;
@@ -99,8 +99,10 @@ void handle_ball_collision(Ball *ball1, Ball *ball2) {
     return;
 }
 
-void check_collisions(Ball (*balls)[BALL_COUNT]) {
+void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc) {
+     // only balls not pocketed
     for (int i = 0; i < BALL_COUNT; i++){
+        if ((*balls)[i].pocketed) continue;
         if ((*balls)[i].x + BALL_RADIUS >= SCREEN_WIDTH || (*balls)[i].x - BALL_RADIUS <= 0) {
             (*balls)[i].vx *= -1;
         }
@@ -116,6 +118,9 @@ void check_collisions(Ball (*balls)[BALL_COUNT]) {
             y2 = (*balls)[j].y;
             if (sq_distance(x1,y1, x2, y2) <= (BALL_RADIUS*BALL_RADIUS)){
                 printf("collsion!");
+                if ((*balls)[i].num == 0 && *fc == NONE) {
+                        *fc = (*balls)[j].type;
+                }
                 handle_ball_collision(&(*balls)[i], &(*balls)[j]);
             }
         }
@@ -124,30 +129,47 @@ void check_collisions(Ball (*balls)[BALL_COUNT]) {
 }
 
 void check_pockets(Ball (*balls)[BALL_COUNT]) {
-
+    // check balls distance to pockets.
+    // TODO: define pocket positions
+    // if ball pocketed, handle pocket
 }
 
-void handle_pocket(Ball *pocketed) {
-
+void handle_pocket(enum Type turn, Ball *pocketed, enum GameState *gs) {
+    // if turn is NONE then set turn to pocketed ball type
+    // change pocketed ball pocketed attribute
+    // if turn is not NONE and own ball pocketed then set game state to HANDBALL
+    // check win/lose conditions
+    // set turn to opposite color
 }
 
 void render_balls(Ball (*balls)[BALL_COUNT]) {
+     // only balls not pocketed
     for (int i = 0; i < BALL_COUNT; i++){
         DrawCircle((*balls)[i].x, (*balls)[i].y, BALL_RADIUS, WHITE);
     }
 }
 
+bool is_moving(Ball (*balls)[BALL_COUNT]){
+    for (int i = 0; i < BALL_COUNT; i++){
+        if (fabs((*balls)[i].vx) >= 0.1 || fabs((*balls)[i].vy) >= 0.1) return true;
+    }
+    return false;
+}
 
 
-void render_stick(Stick *stick) {
+
+
+
+void render_stick(Stick *stick, float pos_x, float pos_y) {
 
 };
 
 
 int main(void){
 
-    enum GameState game_state = NOT_HIT;
+    enum GameState game_state = HIT;
     enum Type first_collision = NONE;
+    enum Type turn = NONE;
 
     Ball (*balls)[BALL_COUNT] = malloc(sizeof(Ball[BALL_COUNT]));
 
@@ -161,26 +183,45 @@ int main(void){
         
        
         switch (game_state) {
-            case NOT_HIT:
-                update_balls(balls);
-                check_collisions(balls);
-                
-                
+            case NOT_HIT:                
                 // stick input
                 // hit ball input
                 // change state when ball hit
+
                 // set first_collision to NONE
+                first_collision = NONE;
                 break;
             case HIT:
                 // set first collision if collision happens
                 // update ball positions
                 // check and handle collisions
+                // TODO: generalized function to position checking
+                update_balls(balls);
+                check_collisions(balls, &first_collision);
+                check_pockets(balls);
                 // change state to NOT_HIT if no handball
                 // change state to HANDBALL if handball
+                if (!is_moving(balls)) {
+                    printf("not hit!!");
+                    if ((first_collision != turn && turn != NONE) || first_collision == NONE) {
+                        game_state = HANDBALL;
+                    } else {
+                        game_state = NOT_HIT;
+
+                    }
+                } 
                 break;
             case HANDBALL:
                 // move ball input
                 // change state when ball moved
+                break;
+            case WIN_SOLID:
+                // restart
+                // display result, restart btn, stats, etc
+                break;
+            case WIN_STRIPE:
+                // restart
+                // display result, restart btn, stats, etc
                 break;
         }
         BeginDrawing();
