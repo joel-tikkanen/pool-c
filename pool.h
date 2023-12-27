@@ -9,6 +9,7 @@
 #define BALL_RADIUS (BALL_DIAMETER / 2.0)
 #define FPS 1000.0
 #define FRICTION 0.5
+#define STICK_LENGTH 400.0
 
 
 enum Type {
@@ -46,7 +47,15 @@ typedef struct ball {
 
 
 typedef struct stick {
-    float x;
+    float start_x;
+    float start_y;
+    float end_x;
+    float end_y;
+
+    float normal_x;
+    float normal_y;
+
+    bool hide;
 } Stick;
 
 Ball init_ball(int num, enum Type type, float x, float y);
@@ -56,7 +65,10 @@ void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc);
 void check_pockets(Ball (*balls)[BALL_COUNT]);
 void handle_pocket(enum Type turn, Ball *pocketed, enum GameState *gs);
 void render_balls(Ball (*balls)[BALL_COUNT]);
-void render_stick(Stick *stick, float pos_x, float pos_y);
+void render_stick(Stick *stick);
+void set_stick(Stick* stick, float mouse_x, float mouse_y,float wb_x, float wb_y);
+
+struct Vector2 GetMousePosition();
 
 
 

@@ -66,7 +66,7 @@ void handle_ball_collision(Ball *ball1, Ball *ball2) {
     float normal_x = diff_x / dist;
     float normal_y = diff_y / dist;
 
-    float offset =  (BALL_DIAMETER - dist) * 0.5;
+    float offset =  (BALL_DIAMETER - dist) * 0.6;
 
     // separating balls
     ball1->x += normal_x * offset;
@@ -125,7 +125,6 @@ void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc) {
             y1 = (*balls)[i].y;
             y2 = (*balls)[j].y;
             if (sq_distance(x1,y1, x2, y2) <= (BALL_DIAMETER*BALL_DIAMETER)){
-                printf("collsion!");
                 if ((*balls)[i].num == 0 && *fc == NONE) {
                         *fc = (*balls)[j].type;
                 }
@@ -133,6 +132,7 @@ void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc) {
             }
         }
     }
+    return;
 
 }
 
@@ -140,6 +140,7 @@ void check_pockets(Ball (*balls)[BALL_COUNT]) {
     // check balls distance to pockets.
     // TODO: define pocket positions
     // if ball pocketed, handle pocket
+    return;
 }
 
 void handle_pocket(enum Type turn, Ball *pocketed, enum GameState *gs) {
@@ -148,6 +149,10 @@ void handle_pocket(enum Type turn, Ball *pocketed, enum GameState *gs) {
     // if turn is not NONE and own ball pocketed then set game state to HANDBALL
     // check win/lose conditions
     // set turn to opposite color
+
+    // white ball to center
+    // dont change white balls attribute pocketed
+    return;
 }
 
 void render_balls(Ball (*balls)[BALL_COUNT]) {
@@ -155,6 +160,7 @@ void render_balls(Ball (*balls)[BALL_COUNT]) {
     for (int i = 0; i < BALL_COUNT; i++){
         DrawCircle((*balls)[i].x, (*balls)[i].y, BALL_RADIUS, WHITE);
     }
+    return;
 }
 
 bool is_moving(Ball (*balls)[BALL_COUNT]){
@@ -168,19 +174,66 @@ bool is_moving(Ball (*balls)[BALL_COUNT]){
 
 
 
-void render_stick(Stick *stick, float pos_x, float pos_y) {
+void render_stick(Stick *stick) {
+    if (stick->hide) return;
 
+    struct Vector2 start;
+    struct Vector2 end;
+
+    start.x = stick->start_x;
+    start.y = stick->start_y;
+    end.x = stick->end_x;
+    end.y = stick->end_y;
+
+    
+    DrawLineEx(start, end, 4.0, WHITE);
+   
+    return;
 };
 
+void set_stick(Stick* stick, float mouse_x, float mouse_y, float wb_x, float wb_y){
+
+
+    float dist = distance(mouse_x, mouse_y, wb_x, wb_y);
+
+    float diff_x = mouse_x - wb_x;
+    float diff_y = mouse_y - wb_y;
+
+    if (dist <= BALL_RADIUS) {
+        // select angle to hit ball
+        stick->normal_x = diff_x / dist;
+        stick->normal_y = diff_y / dist;
+        stick->start_x = wb_x + stick->normal_x * BALL_RADIUS; 
+        stick->start_y = wb_y + stick->normal_y * BALL_RADIUS; 
+        stick->end_x = wb_x - stick->normal_x * -STICK_LENGTH;
+        stick->end_y = wb_y - stick->normal_y * -STICK_LENGTH;
+    } else {
+        // select power of the hit
+        stick->start_x = wb_x + stick->normal_x * BALL_RADIUS + stick->normal_x * dist; 
+        stick->start_y = wb_y + stick->normal_y * BALL_RADIUS + stick->normal_y * dist; 
+        stick->end_x = wb_x - stick->normal_x * -STICK_LENGTH + stick->normal_x * dist;
+        stick->end_y = wb_y - stick->normal_y * -STICK_LENGTH + stick->normal_y * dist;
+    }
+    
+    return;
+}
 
 int main(void){
 
     enum GameState game_state = HIT;
     enum Type first_collision = NONE;
     enum Type turn = NONE;
+
     float dt = 1.0/FPS;
 
+
+
+
     Ball (*balls)[BALL_COUNT] = malloc(sizeof(Ball[BALL_COUNT]));
+    Stick stick = {0};
+
+    struct Vector2 mouse;
+
 
     init_balls(balls);
 
@@ -194,6 +247,13 @@ int main(void){
         switch (game_state) {
             case NOT_HIT:                
                 // stick input
+                stick.hide = true;        
+                if (IsMouseButtonDown(0)) {
+                    stick.hide = false;
+                    mouse = GetMousePosition();
+                    set_stick(&stick, mouse.x,  mouse.y, (*balls)[0].x, (*balls)[0].y);
+                }
+                
                 // hit ball input
                 // change state when ball hit
 
@@ -238,6 +298,7 @@ int main(void){
         // render board
         // render balls
         render_balls(balls);
+        render_stick(&stick);
 
         // render stick
         ClearBackground(BLACK);
