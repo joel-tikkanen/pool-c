@@ -170,6 +170,13 @@ bool is_moving(Ball (*balls)[BALL_COUNT]){
     return false;
 }
 
+void hit_ball(Ball *white_ball, float force_x, float force_y) {
+    printf("ball hit");
+    white_ball->vx = force_x * 0.05;
+    white_ball->vy = force_y * 0.05;
+    return;
+}
+
 
 
 
@@ -226,9 +233,6 @@ int main(void){
 
     float dt = 1.0/FPS;
 
-
-
-
     Ball (*balls)[BALL_COUNT] = malloc(sizeof(Ball[BALL_COUNT]));
     Stick stick = {0};
 
@@ -247,13 +251,21 @@ int main(void){
         switch (game_state) {
             case NOT_HIT:                
                 // stick input
-                stick.hide = true;        
+                stick.hide = true;  
+   
                 if (IsMouseButtonDown(0)) {
                     stick.hide = false;
                     mouse = GetMousePosition();
                     set_stick(&stick, mouse.x,  mouse.y, (*balls)[0].x, (*balls)[0].y);
                 }
-                
+
+                float sq_dist = sq_distance(mouse.x, mouse.y, (*balls)[0].x, (*balls)[0].y);
+                if (IsMouseButtonReleased(0) && sq_dist > BALL_RADIUS*BALL_RADIUS) {
+                    hit_ball(&(*balls)[0], -stick.normal_x*sq_dist, -stick.normal_y*sq_dist);
+                    game_state = HIT;
+                }
+
+
                 // hit ball input
                 // change state when ball hit
 
@@ -271,10 +283,10 @@ int main(void){
                 update_balls(balls, dt);
                 // change state to NOT_HIT if no handball
                 // change state to HANDBALL if handball
+                // TODO: handball
                 if (!is_moving(balls)) {
-                    printf("not hit!!");
                     if ((first_collision != turn && turn != NONE) || first_collision == NONE) {
-                        game_state = HANDBALL;
+                        game_state = NOT_HIT;
                     } else {
                         game_state = NOT_HIT;
 
