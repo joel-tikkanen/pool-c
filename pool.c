@@ -32,8 +32,8 @@ void update_balls(Ball (*balls)[BALL_COUNT], float dt) {
         (*balls)[i].y += (*balls)[i].vy * dt;
         (*balls)[i].vx += (*balls)[i].ax * dt;
         (*balls)[i].vy += (*balls)[i].ay * dt;
-        (*balls)[i].ax = 0.5 * -((*balls)[i].vx);
-        (*balls)[i].ay = 0.5 * -((*balls)[i].vy);
+        (*balls)[i].ax = FRICTION * -((*balls)[i].vx);
+        (*balls)[i].ay = FRICTION * -((*balls)[i].vy);
         if (fabs((*balls)[i].vx) <= 0.1 && fabs((*balls)[i].ax) <= 0.1) (*balls)[i].vx = 0.0;
         if (fabs((*balls)[i].vy) <= 0.1 && fabs((*balls)[i].ay) <= 0.1) (*balls)[i].vy = 0.0;
     }
@@ -50,6 +50,10 @@ float distance(float x1, float y1, float x2, float y2) {
     return (float)sqrt(sq_distance(x1, y1, x2, y2));
 }
 
+bool too_fast(float vx, float vy){
+    return false;
+}
+
 void handle_ball_collision(Ball *ball1, Ball *ball2) {
     float x1, x2, y1, y2;
     x1 = ball1->x;
@@ -58,7 +62,7 @@ void handle_ball_collision(Ball *ball1, Ball *ball2) {
     y2 = ball2->y;
 
     float sq_dist = sq_distance(x1, y1, x2, y2);
-    float dist = distance(x1, y1, x2, y2);
+    float dist = sqrt(sq_dist);
 
     float diff_x = x2 - x1;
     float diff_y = y2 - y1;
@@ -68,18 +72,34 @@ void handle_ball_collision(Ball *ball1, Ball *ball2) {
 
     float offset =  (BALL_DIAMETER - dist) * 0.6;
 
+    if (dist > 0.0) {
+        normal_x = diff_x / dist;
+        normal_y = diff_y / dist;
+
+        ball1->x += normal_x * offset;
+        ball2->x -= normal_x * offset;
+        ball1->y += normal_y * offset;
+        ball2->y -= normal_y * offset;
+    }
+
     // separating balls
     ball1->x += normal_x * offset;
     ball2->x -= normal_x * offset;
     ball1->y += normal_y * offset;
     ball2->y -= normal_y * offset;
 
-
     // after separation
     x1 = ball1->x;
     x2 = ball2->x;
     y1 = ball1->y;
     y2 = ball2->y;
+
+
+    diff_x = x2 - x1;
+    diff_y = y2 - y1;
+
+    dist = distance(x1, y1, x2, y2);
+
 
     normal_x = diff_x / dist;
     normal_y = diff_y / dist;
@@ -98,7 +118,7 @@ void handle_ball_collision(Ball *ball1, Ball *ball2) {
     float new_vx_2 = vx2 + p * normal_x;
     float new_vy_2 = vy2 + p * normal_y;
 
-    if (new_vx_1 < SCREEN_WIDTH && new_vy_1 < SCREEN_WIDTH && new_vx_2 < SCREEN_WIDTH && new_vy_2 < SCREEN_WIDTH) {
+    if (new_vx_1*(1/FPS) < SCREEN_WIDTH && new_vy_1*(1/FPS) < SCREEN_HEIGHT && new_vx_2*(1/FPS) < SCREEN_WIDTH && new_vy_2*(1/FPS) < SCREEN_HEIGHT) {
         ball1->vx = new_vx_1;
         ball1->vy = new_vy_1;
         ball2->vx = new_vx_2;
@@ -111,11 +131,11 @@ void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc) {
     // only balls not pocketed
     for (int i = 0; i < BALL_COUNT; i++){
         if ((*balls)[i].pocketed) continue;
-        if ((*balls)[i].x + BALL_RADIUS >= SCREEN_WIDTH || (*balls)[i].x - BALL_RADIUS <= 0) {
+        if ((*balls)[i].x + BALL_RADIUS >= SCREEN_WIDTH-WALL_PADDING || (*balls)[i].x - BALL_RADIUS <= WALL_PADDING) {
             (*balls)[i].vx *= -1;
         }
 
-        if ((*balls)[i].y + BALL_RADIUS >= SCREEN_HEIGHT || (*balls)[i].y - BALL_RADIUS <= 0) {
+        if ((*balls)[i].y + BALL_RADIUS >= SCREEN_HEIGHT-WALL_PADDING || (*balls)[i].y - BALL_RADIUS <= WALL_PADDING) {
             (*balls)[i].vy *= -1;
         }
         for (int j = i+1; j < BALL_COUNT; j++){
@@ -160,7 +180,12 @@ void render_balls(Ball (*balls)[BALL_COUNT]) {
     for (int i = 0; i < BALL_COUNT; i++){
         DrawCircle((*balls)[i].x, (*balls)[i].y, BALL_RADIUS, WHITE);
     }
+    
     return;
+}
+
+void render_table(Texture2D table_texture){
+    DrawTexture(table_texture, SCREEN_WIDTH/2 - table_texture.width/2, SCREEN_HEIGHT/2 - table_texture.height/2 + 35, WHITE);
 }
 
 bool is_moving(Ball (*balls)[BALL_COUNT]){
@@ -192,7 +217,7 @@ void render_stick(Stick *stick) {
     end.x = stick->end_x;
     end.y = stick->end_y;
 
-    
+
     DrawLineEx(start, end, 4.0, WHITE);
    
     return;
@@ -241,8 +266,18 @@ int main(void){
 
     init_balls(balls);
 
+    
+
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "pool");
-    SetTargetFPS(FPS);
+
+    Image img = LoadImage("Pool_Table_Type_1_BG Wide.png");
+    ImageResize(&img, SCREEN_WIDTH+75, SCREEN_HEIGHT+200);
+
+    Texture2D texture = LoadTextureFromImage(img);
+
+    UnloadImage(img);
+
+    SetTargetFPS(80);
 
     while (!WindowShouldClose()) {
         
@@ -256,9 +291,10 @@ int main(void){
                 if (IsMouseButtonDown(0)) {
                     stick.hide = false;
                     mouse = GetMousePosition();
+
                     set_stick(&stick, mouse.x,  mouse.y, (*balls)[0].x, (*balls)[0].y);
                 }
-
+               
                 float sq_dist = sq_distance(mouse.x, mouse.y, (*balls)[0].x, (*balls)[0].y);
                 if (IsMouseButtonReleased(0) && sq_dist > BALL_RADIUS*BALL_RADIUS) {
                     hit_ball(&(*balls)[0], -stick.normal_x*sq_dist, -stick.normal_y*sq_dist);
@@ -309,8 +345,10 @@ int main(void){
         BeginDrawing();
         // render board
         // render balls
+        render_table(texture);
         render_balls(balls);
         render_stick(&stick);
+        
 
         // render stick
         ClearBackground(BLACK);
@@ -320,6 +358,7 @@ int main(void){
     }
 
     free(balls);
+    UnloadTexture(texture);
     CloseWindow();
 
     return 0;

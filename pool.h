@@ -10,6 +10,8 @@
 #define FPS 1000.0
 #define FRICTION 0.5
 #define STICK_LENGTH 400.0
+#define WALL_PADDING 26.0
+#define DELTA 0.5
 
 
 enum Type {
