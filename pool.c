@@ -70,53 +70,44 @@ void handle_ball_collision(Ball *ball1, Ball *ball2) {
     float normal_x = diff_x / dist;
     float normal_y = diff_y / dist;
 
-    float offset =  (BALL_DIAMETER - dist) * 0.6;
+    //float offset =  (BALL_DIAMETER - dist) * 0.6;
 
-    if (dist > 0.0) {
-        normal_x = diff_x / dist;
-        normal_y = diff_y / dist;
+    // if (dist > 0.0) {
+    //     normal_x = diff_x / dist;
+    //     normal_y = diff_y / dist;
 
-        ball1->x += normal_x * offset;
-        ball2->x -= normal_x * offset;
-        ball1->y += normal_y * offset;
-        ball2->y -= normal_y * offset;
-    }
+    //     ball1->x += normal_x * offset;
+    //     ball2->x -= normal_x * offset;
+    //     ball1->y += normal_y * offset;
+    //     ball2->y -= normal_y * offset;
+    // }
 
-    // separating balls
-    ball1->x += normal_x * offset;
-    ball2->x -= normal_x * offset;
-    ball1->y += normal_y * offset;
-    ball2->y -= normal_y * offset;
+
 
     // after separation
-    x1 = ball1->x;
-    x2 = ball2->x;
-    y1 = ball1->y;
-    y2 = ball2->y;
+    // x1 = ball1->x;
+    // x2 = ball2->x;
+    // y1 = ball1->y;
+    // y2 = ball2->y;
 
 
-    diff_x = x2 - x1;
-    diff_y = y2 - y1;
+    // diff_x = x2 - x1;
+    // diff_y = y2 - y1;
 
-    dist = distance(x1, y1, x2, y2);
+    //dist = distance(x1, y1, x2, y2);
 
 
-    normal_x = diff_x / dist;
-    normal_y = diff_y / dist;
-
-    float vx1 = ball1->vx;
-    float vy1 = ball1->vy;
-    float vx2 = ball2->vx;
-    float vy2 = ball2->vy;
+    // normal_x = diff_x / dist;
+    // normal_y = diff_y / dist;
 
     // elastic response
-    float p = (vx1*normal_x+vy1*normal_y) - (vx2*normal_x+vy2*normal_y);
+    float p = (ball1->vx*normal_x+ball1->vy*normal_y) - (ball2->vx*normal_x+ball2->vy*normal_y);
 
-    float new_vx_1 = vx1 - p * normal_x;
-    float new_vy_1 = vy1 - p * normal_y;
+    float new_vx_1 = ball1->vx - p * normal_x;
+    float new_vy_1 = ball1->vy - p * normal_y;
 
-    float new_vx_2 = vx2 + p * normal_x;
-    float new_vy_2 = vy2 + p * normal_y;
+    float new_vx_2 = ball2->vx + p * normal_x;
+    float new_vy_2 = ball2->vy + p * normal_y;
 
     if (new_vx_1*(1/FPS) < SCREEN_WIDTH && new_vy_1*(1/FPS) < SCREEN_HEIGHT && new_vx_2*(1/FPS) < SCREEN_WIDTH && new_vy_2*(1/FPS) < SCREEN_HEIGHT) {
         ball1->vx = new_vx_1;
@@ -125,6 +116,14 @@ void handle_ball_collision(Ball *ball1, Ball *ball2) {
         ball2->vy = new_vy_2;
     }
     return;
+}
+
+float collision_time_estimate(Ball ball1, Ball ball2){
+    return 0.01;
+}
+
+void check_collisions_li(){
+    
 }
 
 void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc) {
