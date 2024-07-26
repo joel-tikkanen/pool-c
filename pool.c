@@ -17,11 +17,22 @@ Ball init_ball(int num, enum Type type, float x, float y)
 }
 void init_balls(Ball (*balls)[BALL_COUNT])
 {
-    // TODO: Init the balls correctly
-    (*balls)[0] = init_ball(0, SOLID, 500, 100);
-    (*balls)[1] = init_ball(0, SOLID, 100, 90);
-    (*balls)[0].vx = -150;
-    (*balls)[1].vx = 150;
+    (*balls)[0] = init_ball(0, NONE, 375, 300); 
+    (*balls)[1] = init_ball(1, SOLID, 375, 100);
+    (*balls)[2] = init_ball(2, SOLID, 395, 80);
+    (*balls)[3] = init_ball(3, SOLID, 355, 80);
+    (*balls)[4] = init_ball(4, SOLID, 415, 60);
+    (*balls)[5] = init_ball(5, SOLID, 375, 60);
+    (*balls)[6] = init_ball(6, SOLID, 335, 60);
+    (*balls)[7] = init_ball(7, SOLID, 435, 40);
+    (*balls)[8] = init_ball(8, EIGHT, 375, 40);
+    (*balls)[9] = init_ball(9, STRIPES, 315, 60);
+    (*balls)[10] = init_ball(10, STRIPES, 395, 40);
+    (*balls)[11] = init_ball(11, STRIPES, 355, 40);
+    (*balls)[12] = init_ball(12, STRIPES, 455, 20);
+    (*balls)[13] = init_ball(13, STRIPES, 415, 20);
+    (*balls)[14] = init_ball(14, STRIPES, 375, 20);
+    (*balls)[15] = init_ball(15, STRIPES, 335, 20);
     return;
 }
 
@@ -121,15 +132,6 @@ void handle_ball_collision(Ball *ball1, Ball *ball2)
     return;
 }
 
-float collision_time_estimate(Ball ball1, Ball ball2)
-{
-    return 0.01;
-}
-
-void check_collisions_li()
-{
-}
-
 void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc)
 {
     // only balls not pocketed
@@ -166,25 +168,52 @@ void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc)
     return;
 }
 
-void check_pockets(Ball (*balls)[BALL_COUNT])
+void check_pockets(Ball (*balls)[BALL_COUNT], enum GameState gs, enum Type turn)
 {
-    // check balls distance to pockets.
-    // TODO: define pocket positions
-    // if ball pocketed, handle pocket
-    return;
+    for (int i = 0; i < BALL_COUNT; ++i)
+    {
+        if ((*balls)[i].pocketed)
+            continue;
+
+        for (int j = 0; j < 6; ++j)
+        {
+            float dx = (*balls)[i].x - pockets[j].x;
+            float dy = (*balls)[i].y - pockets[j].y;
+            float dist_squared = dx * dx + dy * dy;
+
+            if (dist_squared <= BALL_RADIUS * BALL_RADIUS)
+            {
+                handle_pocket(turn, &(*balls)[i], gs);
+                break;
+            }
+        }
+    }
 }
 
-void handle_pocket(enum Type turn, Ball *pocketed, enum GameState *gs)
+void handle_pocket(enum Type turn, Ball *pocketed, enum GameState gs)
 {
-    // if turn is NONE then set turn to pocketed ball type
-    // change pocketed ball pocketed attribute
-    // if turn is not NONE and own ball pocketed then set game state to HANDBALL
-    // check win/lose conditions
-    // set turn to opposite color
+    if (pocketed->type == NONE)
+    {
+        pocketed->x = 375;
+        pocketed->y = 200;
+        pocketed->pocketed = false;
+    }
+    else
+    {
 
-    // white ball to center
-    // dont change white balls attribute pocketed
-    return;
+        pocketed->pocketed = true;
+
+        if (turn == NONE)
+        {
+
+            turn = pocketed->type;
+        }
+        else if (turn != pocketed->type)
+        {
+            gs = HANDBALL;
+            turn = turn == SOLID ? STRIPES : SOLID;
+        }
+    }
 }
 
 void draw_balls(Ball (*balls)[BALL_COUNT])
@@ -307,9 +336,10 @@ int main(void)
 
     while (!WindowShouldClose())
     {
-
+        mouse = GetMousePosition();
         switch (game_state)
         {
+
         case NOT_HIT:
             // stick input
             stick.hide = true;
@@ -317,7 +347,6 @@ int main(void)
             if (IsMouseButtonDown(0))
             {
                 stick.hide = false;
-                mouse = GetMousePosition();
 
                 set_stick(&stick, mouse.x, mouse.y, (*balls)[0].x, (*balls)[0].y);
             }
@@ -342,7 +371,7 @@ int main(void)
             // TODO: generalized function to position checking
 
             check_collisions(balls, &first_collision);
-            check_pockets(balls);
+            check_pockets(balls, game_state, turn);
             update_balls(balls, dt);
             // change state to NOT_HIT if no handball
             // change state to HANDBALL if handball
@@ -363,7 +392,6 @@ int main(void)
         case HANDBALL:
             // move ball input
             // change state when ball moved
-            mouse = GetMousePosition();
 
             (*balls)[0].x = mouse.x;
 
@@ -396,7 +424,10 @@ int main(void)
         draw_balls(balls);
         draw_stick(&stick);
 
-        DrawText(TextFormat("Current Game State: %s", gameStateNames[game_state]), 50, 100, 20, DARKGRAY);
+        DrawText(TextFormat("Current Game State: %s", gameStateNames[game_state]), 125, 50, 20, DARKGRAY);
+        DrawText(TextFormat("Current turn is: %s", typeNames[turn]), 125, 100, 20, DARKGRAY);
+
+        DrawText(TextFormat("Current mouse position is: (%d, %d)", (int)mouse.x, (int)mouse.y), 125, 150, 20, DARKGRAY);
 
         // draw stick
         ClearBackground(BLACK);
