@@ -13,8 +13,8 @@
 #define WALL_PADDING 26.0
 #define DELTA 0.5
 
-
-enum Type {
+enum Type
+{
     SOLID,
     STRIPES,
     WHITE,
@@ -22,15 +22,26 @@ enum Type {
     NONE,
 };
 
-enum GameState {
+enum GameState
+{
     NOT_HIT,
     HIT,
     HANDBALL,
     WIN_SOLID,
     WIN_STRIPE,
+    GAMESTATE_COUNT
 };
 
-typedef struct ball {
+// for the window title
+const char *gameStateNames[GAMESTATE_COUNT] = {
+    "NOT_HIT",
+    "HIT",
+    "HANDBALL",
+    "WIN_SOLID",
+    "WIN_STRIPE"};
+
+typedef struct ball
+{
     int num;
     enum Type type;
 
@@ -47,8 +58,8 @@ typedef struct ball {
     bool pocketed;
 } Ball;
 
-
-typedef struct stick {
+typedef struct stick
+{
     float start_x;
     float start_y;
     float end_x;
@@ -62,19 +73,13 @@ typedef struct stick {
 
 Ball init_ball(int num, enum Type type, float x, float y);
 void init_balls(Ball (*balls)[BALL_COUNT]);
-void handle_ball_collision(Ball* ball1, Ball* ball2);
+void handle_ball_collision(Ball *ball1, Ball *ball2);
 void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc);
 void check_pockets(Ball (*balls)[BALL_COUNT]);
 void handle_pocket(enum Type turn, Ball *pocketed, enum GameState *gs);
 void render_balls(Ball (*balls)[BALL_COUNT]);
 void render_stick(Stick *stick);
-void set_stick(Stick* stick, float mouse_x, float mouse_y,float wb_x, float wb_y);
+bool in_bounds(int x, int y);
+void set_stick(Stick *stick, float mouse_x, float mouse_y, float wb_x, float wb_y);
 
 struct Vector2 GetMousePosition();
-
-
-
-
-
-
-
