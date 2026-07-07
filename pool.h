@@ -58,14 +58,16 @@ const char *gameStateNames[GAME_STATE_COUNT] = {
     "WIN_STRIPE",
 };
 
+typedef struct vec {
+    int x;
+    int y;
+} Vec;
+
 typedef struct ball
 {
     int num;
     enum Type type;
-
-    float x;
-    float y;
-
+    struct Vec pos;
     float vx;
     float vy;
 
@@ -78,10 +80,8 @@ typedef struct ball
 
 typedef struct stick
 {
-    float start_x;
-    float start_y;
-    float end_x;
-    float end_y;
+    struct Vec start_pos;
+    struct Vec end_pos;
 
     float normal_x;
     float normal_y;
@@ -89,15 +89,27 @@ typedef struct stick
     bool hide;
 } Stick;
 
-typedef struct vec {
-    int x;
-    int y;
-} Vec;
 
+
+
+typedef struct pocket {
+    struct Vec pos;
+    int radius;
+} Pocket; 
+
+typedef struct wall {
+    struct Vec start;
+    struct Vec end;
+    struct Vec normal;
+} Wall;
+
+
+
+// x, y, radius 
 Vec pockets[] = {
-    {32, 26},
-    {29, 368},
-    {375, 16},
+    {32, 26, 30},
+    {29, 368, 34},
+    {375, 16, },
     {376, 379},
     {722, 26},
     {720, 369}
