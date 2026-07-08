@@ -2,6 +2,49 @@
 #include "include/raylib.h"
 #include <math.h>
 
+Color get_ball_color(int num)
+{
+    switch (num)
+    {
+    case 0:
+        return RAYWHITE; // cue ball
+    case 1:
+        return YELLOW;
+    case 2:
+        return BLUE;
+    case 3:
+        return RED;
+    case 4:
+        return PURPLE;
+    case 5:
+        return ORANGE;
+    case 6:
+        return GREEN;
+    case 7:
+        return MAROON;
+    case 8:
+        return BLACK;
+
+    case 9:
+        return YELLOW;
+    case 10:
+        return BLUE;
+    case 11:
+        return RED;
+    case 12:
+        return PURPLE;
+    case 13:
+        return ORANGE;
+    case 14:
+        return GREEN;
+    case 15:
+        return MAROON;
+
+    default:
+        return GRAY;
+    }
+}
+
 Ball init_ball(int num, enum Type type, float x, float y)
 {
     Ball b = {0};
@@ -17,6 +60,8 @@ Ball init_ball(int num, enum Type type, float x, float y)
     b.av = 0.0f;
     b.ax = 0.0f;
     b.ay = 0.0f;
+
+    b.color = get_ball_color(num);
 
     b.pocketed = false;
 
@@ -269,13 +314,18 @@ void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *gs)
 
 void draw_balls(Ball (*balls)[BALL_COUNT])
 {
-    // only balls not pocketed
     for (int i = 0; i < BALL_COUNT; i++)
     {
-        DrawCircle((*balls)[i].pos.x, (*balls)[i].pos.y, BALL_RADIUS, WHITE);
-    }
+        Ball *ball = &(*balls)[i];
 
-    return;
+        if (ball->pocketed)
+            continue;
+
+        DrawCircleV(
+            (Vector2){ball->pos.x, ball->pos.y},
+            BALL_RADIUS,
+            ball->color);
+    }
 }
 
 void draw_table(Texture2D table_texture)

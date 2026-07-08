@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include "include/raylib.h"
 
 #define SCREEN_WIDTH 750
 #define SCREEN_HEIGHT 400
@@ -99,6 +100,7 @@ typedef struct Ball
     float av;
     float ax;
     float ay;
+    Color color;
 
     bool pocketed;
 } Ball;
@@ -128,21 +130,23 @@ typedef struct Wall
 } Wall;
 
 static const Wall walls[WALL_COUNT] = {
-    {{TABLE_LEFT, TABLE_TOP}, {TABLE_RIGHT, TABLE_TOP}, {0.0f, 1.0f}},       // top
+    {{TABLE_LEFT, TABLE_TOP}, {TABLE_RIGHT, TABLE_TOP}, {0.0f, 1.0f}},        // top
     {{TABLE_LEFT, TABLE_BOTTOM}, {TABLE_RIGHT, TABLE_BOTTOM}, {0.0f, -1.0f}}, // bottom
     {{TABLE_LEFT, TABLE_BOTTOM}, {TABLE_LEFT, TABLE_TOP}, {1.0f, 0.0f}},      // left
     {{TABLE_RIGHT, TABLE_BOTTOM}, {TABLE_RIGHT, TABLE_TOP}, {-1.0f, 0.0f}},   // right
 };
 
 static const Pocket pockets[POCKET_COUNT] = {
-    {{34.0f, 29.0f}, 15.0f},    // top-left
-    {{375.0f, 16.0f}, 15.0f},   // top-middle
-    {{722.0f, 26.0f}, 15.0f},   // top-right
+    {{34.0f, 29.0f}, 15.0f},  // top-left
+    {{375.0f, 16.0f}, 15.0f}, // top-middle
+    {{722.0f, 26.0f}, 15.0f}, // top-right
 
-    {{32.0f, 367.0f}, 15.0f},   // bottom-left
-    {{376.0f, 379.0f}, 15.0f},  // bottom-middle
-    {{720.0f, 369.0f}, 15.0f},  // bottom-right
+    {{32.0f, 367.0f}, 15.0f},  // bottom-left
+    {{376.0f, 379.0f}, 15.0f}, // bottom-middle
+    {{720.0f, 369.0f}, 15.0f}, // bottom-right
 };
+
+Color get_ball_color(int num);
 
 Ball init_ball(int num, enum Type type, float x, float y);
 void init_balls(Ball (*balls)[BALL_COUNT]);
@@ -165,7 +169,6 @@ void set_stick(
     float mouse_x,
     float mouse_y,
     float wb_x,
-    float wb_y
-);
+    float wb_y);
 
 #endif
