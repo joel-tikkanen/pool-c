@@ -279,20 +279,56 @@ void check_pockets(Ball (*balls)[BALL_COUNT], enum GameState *gs, enum Type *tur
 
             if (dist_squared <= pocket.radius * pocket.radius)
             {
-                handle_pocket(turn, ball, gs);
+                handle_pocket(turn, ball, gs, balls);
                 break;
             }
         }
     }
 }
 
-void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *gs)
+void declare_win(enum Type *turn, enum GameState *gs)
 {
-    if (pocketed->type == TYPE_NONE)
+    if (*turn == TYPE_SOLID)
+    {
+        *gs = WIN_SOLID;
+    }
+    else
+    {
+        *gs = WIN_STRIPE;
+    }
+
+    // TODO:
+    // draw winning screen with stats and ability to reset game
+}
+
+void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *gs, Ball (*balls)[BALL_COUNT])
+{
+
+    if (pocketed->type == TYPE_EIGHT)
+    {
+        for (int i = 0; i < BALL_COUNT; i++)
+        {
+            Ball *ball = &(*balls)[i];
+
+            if (ball->type == *turn && !ball->pocketed)
+            {
+                switch_turn(turn);
+                declare_win(turn, gs);
+            }
+        }
+
+        declare_win(turn, gs);
+    }
+
+    if (pocketed->type == TYPE_CUE)
     {
         pocketed->pos.x = 375;
         pocketed->pos.y = 200;
         pocketed->pocketed = false;
+
+        *gs = HANDBALL;
+
+        switch_turn(turn);
     }
     else
     {
@@ -301,13 +337,12 @@ void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *gs)
 
         if (*turn == TYPE_NONE)
         {
-
             *turn = pocketed->type;
         }
         else if (*turn != pocketed->type)
         {
             *gs = HANDBALL;
-            *turn = turn == TYPE_SOLID ? TYPE_STRIPES : TYPE_SOLID;
+            switch_turn(turn);
         }
     }
 }
@@ -341,6 +376,11 @@ bool is_moving(Ball (*balls)[BALL_COUNT])
             return true;
     }
     return false;
+}
+
+void switch_turn(enum Type *turn)
+{
+    *turn = *turn == TYPE_SOLID ? TYPE_STRIPES : TYPE_SOLID;
 }
 
 void hit_ball(Ball *white_ball, float force_x, float force_y)
@@ -450,11 +490,6 @@ int main(void)
                 game_state = HIT;
             }
 
-            // hit ball input
-            // change state when ball hit
-
-            // set first_collision to NONE
-
             first_collision = TYPE_NONE;
             break;
         case HIT:
@@ -470,12 +505,12 @@ int main(void)
                 if ((first_collision != turn && turn != TYPE_NONE) || first_collision == TYPE_NONE)
                 {
                     game_state = HANDBALL;
-                    turn = turn == TYPE_SOLID ? TYPE_STRIPES : TYPE_SOLID;
                 }
                 else
                 {
                     game_state = NOT_HIT;
                 }
+                switch_turn(&turn);
             }
             break;
         case HANDBALL:

@@ -137,13 +137,13 @@ static const Wall walls[WALL_COUNT] = {
 };
 
 static const Pocket pockets[POCKET_COUNT] = {
-    {{34.0f, 29.0f}, 15.0f},  // top-left
-    {{375.0f, 16.0f}, 15.0f}, // top-middle
-    {{722.0f, 26.0f}, 15.0f}, // top-right
+    {{34.0f, 29.0f}, 18.0f},  // top-left
+    {{375.0f, 16.0f}, 18.0f}, // top-middle
+    {{722.0f, 26.0f}, 18.0f}, // top-right
 
-    {{32.0f, 367.0f}, 15.0f},  // bottom-left
-    {{376.0f, 379.0f}, 15.0f}, // bottom-middle
-    {{720.0f, 369.0f}, 15.0f}, // bottom-right
+    {{32.0f, 367.0f}, 18.0f},  // bottom-left
+    {{376.0f, 379.0f}, 18.0f}, // bottom-middle
+    {{720.0f, 369.0f}, 18.0f}, // bottom-right
 };
 
 Color get_ball_color(int num);
@@ -157,10 +157,11 @@ void handle_ball_collision(Ball *ball1, Ball *ball2);
 void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc);
 
 void check_pockets(Ball (*balls)[BALL_COUNT], enum GameState *gs, enum Type *turn);
-void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *gs);
+void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *gs, Ball (*balls)[BALL_COUNT]);
 
 void render_balls(Ball (*balls)[BALL_COUNT]);
 void render_stick(Stick *stick);
+void switch_turn(enum Type *turn);
 
 bool in_bounds(int x, int y);
 
