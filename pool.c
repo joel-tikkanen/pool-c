@@ -296,9 +296,6 @@ void declare_win(enum Type *turn, enum GameState *gs)
     {
         *gs = WIN_STRIPE;
     }
-
-    // TODO:
-    // draw winning screen with stats and ability to reset game
 }
 
 void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *gs, Ball (*balls)[BALL_COUNT])
@@ -399,12 +396,20 @@ void draw_stick(Stick *stick)
     struct Vector2 start;
     struct Vector2 end;
 
+    struct Vector2 point_start;
+    struct Vector2 point_end;
+
     start.x = stick->start_pos.x;
     start.y = stick->start_pos.y;
     end.x = stick->end_pos.x;
     end.y = stick->end_pos.y;
 
-    DrawLineEx(start, end, 4.0, WHITE);
+    point_start.x = start.x + stick->normal_x * (STICK_LENGTH * 0.01);
+    point_start.y = start.y + stick->normal_y * (STICK_LENGTH * 0.01);
+
+    DrawLineEx(start, end, 5, WHITE);
+
+    DrawLineEx(end, point_start, 5, DARKGRAY);
 
     return;
 };
