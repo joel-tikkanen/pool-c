@@ -8,32 +8,56 @@ Ball init_ball(int num, enum Type type, float x, float y)
 
     b.num = num;
     b.type = type;
+    b.pos.x = x;
+    b.pos.y = y;
+
+    b.vx = 0.0f;
+    b.vy = 0.0f;
+
+    b.av = 0.0f;
+    b.ax = 0.0f;
+    b.ay = 0.0f;
+
     b.pocketed = false;
-    b.x = x;
-    b.y = y;
-    b.vx = 0;
 
     return b;
 }
+
 void init_balls(Ball (*balls)[BALL_COUNT])
 {
-    (*balls)[0] = init_ball(0, NONE, 375, 300); 
-    (*balls)[1] = init_ball(1, SOLID, 375, 100);
-    (*balls)[2] = init_ball(2, SOLID, 395, 80);
-    (*balls)[3] = init_ball(3, SOLID, 355, 80);
-    (*balls)[4] = init_ball(4, SOLID, 415, 60);
-    (*balls)[5] = init_ball(5, SOLID, 375, 60);
-    (*balls)[6] = init_ball(6, SOLID, 335, 60);
-    (*balls)[7] = init_ball(7, SOLID, 435, 40);
-    (*balls)[8] = init_ball(8, EIGHT, 375, 40);
-    (*balls)[9] = init_ball(9, STRIPES, 315, 60);
-    (*balls)[10] = init_ball(10, STRIPES, 395, 40);
-    (*balls)[11] = init_ball(11, STRIPES, 355, 40);
-    (*balls)[12] = init_ball(12, STRIPES, 455, 20);
-    (*balls)[13] = init_ball(13, STRIPES, 415, 20);
-    (*balls)[14] = init_ball(14, STRIPES, 375, 20);
-    (*balls)[15] = init_ball(15, STRIPES, 335, 20);
-    return;
+    float x = RACK_START_X;
+    float y = RACK_START_Y;
+
+    // cue ball
+    (*balls)[0] = init_ball(0, TYPE_CUE, CUE_START_X, CUE_START_Y);
+
+    // rack:
+    //
+    //          1
+    //        9   2
+    //      10  8   3
+    //     4  11  12  5
+    //   13  6   14  15  7
+
+    (*balls)[1] = init_ball(1, TYPE_SOLID, x, y);
+
+    (*balls)[9] = init_ball(9, TYPE_STRIPES, x + RACK_STEP_X, y - RACK_STEP_Y);
+    (*balls)[2] = init_ball(2, TYPE_SOLID, x + RACK_STEP_X, y + RACK_STEP_Y);
+
+    (*balls)[10] = init_ball(10, TYPE_STRIPES, x + RACK_STEP_X * 2.0f, y - RACK_STEP_Y * 2.0f);
+    (*balls)[8] = init_ball(8, TYPE_EIGHT, x + RACK_STEP_X * 2.0f, y);
+    (*balls)[3] = init_ball(3, TYPE_SOLID, x + RACK_STEP_X * 2.0f, y + RACK_STEP_Y * 2.0f);
+
+    (*balls)[4] = init_ball(4, TYPE_SOLID, x + RACK_STEP_X * 3.0f, y - RACK_STEP_Y * 3.0f);
+    (*balls)[11] = init_ball(11, TYPE_STRIPES, x + RACK_STEP_X * 3.0f, y - RACK_STEP_Y);
+    (*balls)[12] = init_ball(12, TYPE_STRIPES, x + RACK_STEP_X * 3.0f, y + RACK_STEP_Y);
+    (*balls)[5] = init_ball(5, TYPE_SOLID, x + RACK_STEP_X * 3.0f, y + RACK_STEP_Y * 3.0f);
+
+    (*balls)[13] = init_ball(13, TYPE_STRIPES, x + RACK_STEP_X * 4.0f, y - RACK_STEP_Y * 4.0f);
+    (*balls)[6] = init_ball(6, TYPE_SOLID, x + RACK_STEP_X * 4.0f, y - RACK_STEP_Y * 2.0f);
+    (*balls)[14] = init_ball(14, TYPE_STRIPES, x + RACK_STEP_X * 4.0f, y);
+    (*balls)[15] = init_ball(15, TYPE_STRIPES, x + RACK_STEP_X * 4.0f, y + RACK_STEP_Y * 2.0f);
+    (*balls)[7] = init_ball(7, TYPE_SOLID, x + RACK_STEP_X * 4.0f, y + RACK_STEP_Y * 4.0f);
 }
 
 void update_balls(Ball (*balls)[BALL_COUNT], float dt)
@@ -41,15 +65,15 @@ void update_balls(Ball (*balls)[BALL_COUNT], float dt)
     // only balls not pocketed
     for (int i = 0; i < BALL_COUNT; i++)
     {
-        (*balls)[i].x += (*balls)[i].vx * dt;
-        (*balls)[i].y += (*balls)[i].vy * dt;
+        (*balls)[i].pos.x += (*balls)[i].vx * dt;
+        (*balls)[i].pos.y += (*balls)[i].vy * dt;
         (*balls)[i].vx += (*balls)[i].ax * dt;
         (*balls)[i].vy += (*balls)[i].ay * dt;
-        (*balls)[i].ax = FRICTION * -((*balls)[i].vx);
-        (*balls)[i].ay = FRICTION * -((*balls)[i].vy);
-        if (fabs((*balls)[i].vx) <= 0.1 && fabs((*balls)[i].ax) <= 0.1)
+        (*balls)[i].ax = FRICTION_PER_FRAME * -((*balls)[i].vx);
+        (*balls)[i].ay = FRICTION_PER_FRAME * -((*balls)[i].vy);
+        if (fabs((*balls)[i].vx) <= STOP_SPEED && fabs((*balls)[i].ax) <= STOP_SPEED)
             (*balls)[i].vx = 0.0;
-        if (fabs((*balls)[i].vy) <= 0.1 && fabs((*balls)[i].ay) <= 0.1)
+        if (fabs((*balls)[i].vy) <= STOP_SPEED && fabs((*balls)[i].ay) <= STOP_SPEED)
             (*balls)[i].vy = 0.0;
     }
     return;
@@ -65,56 +89,54 @@ float distance(float x1, float y1, float x2, float y2)
     return (float)sqrt(sq_distance(x1, y1, x2, y2));
 }
 
-bool too_fast(float vx, float vy)
+bool in_bounds(int x, int y)
 {
-    return false;
+    return x >= TABLE_LEFT && x <= TABLE_RIGHT && y >= TABLE_TOP && y <= TABLE_BOTTOM;
 }
 
 void handle_ball_collision(Ball *ball1, Ball *ball2)
 {
-    float x1, x2, y1, y2;
-    x1 = ball1->x;
-    x2 = ball2->x;
-    y1 = ball1->y;
-    y2 = ball2->y;
 
-    float sq_dist = sq_distance(x1, y1, x2, y2);
-    float dist = sqrt(sq_dist);
+    float normal_x;
+    float normal_y;
 
-    float diff_x = x2 - x1;
-    float diff_y = y2 - y1;
+    float sq_dist = sq_distance(
+        ball1->pos.x, ball1->pos.y,
+        ball2->pos.x, ball2->pos.y);
 
-    float normal_x = diff_x / dist;
-    float normal_y = diff_y / dist;
+    float min_dist = BALL_DIAMETER;
 
-    // float offset =  (BALL_DIAMETER - dist) * 0.6;
+    if (sq_dist <= 0.0001f)
+    {
+        ball1->pos.x -= BALL_RADIUS * 0.5f;
+        ball2->pos.x += BALL_RADIUS * 0.5f;
+        return;
+    }
 
-    // if (dist > 0.0) {
-    //     normal_x = diff_x / dist;
-    //     normal_y = diff_y / dist;
+    float dist = sqrtf(sq_dist);
 
-    //     ball1->x += normal_x * offset;
-    //     ball2->x -= normal_x * offset;
-    //     ball1->y += normal_y * offset;
-    //     ball2->y -= normal_y * offset;
-    // }
+    if (dist < min_dist)
+    {
+        float diff_x = ball2->pos.x - ball1->pos.x;
+        float diff_y = ball2->pos.y - ball1->pos.y;
 
-    // after separation
-    // x1 = ball1->x;
-    // x2 = ball2->x;
-    // y1 = ball1->y;
-    // y2 = ball2->y;
+        normal_x = diff_x / dist;
+        normal_y = diff_y / dist;
 
-    // diff_x = x2 - x1;
-    // diff_y = y2 - y1;
+        float overlap = min_dist - dist;
+        float correction = overlap * 0.5f;
 
-    // dist = distance(x1, y1, x2, y2);
+        ball1->pos.x -= normal_x * correction;
+        ball1->pos.y -= normal_y * correction;
 
-    // normal_x = diff_x / dist;
-    // normal_y = diff_y / dist;
+        ball2->pos.x += normal_x * correction;
+        ball2->pos.y += normal_y * correction;
+    }
 
     // elastic response
     float p = (ball1->vx * normal_x + ball1->vy * normal_y) - (ball2->vx * normal_x + ball2->vy * normal_y);
+
+    p *= BALL_RESTITUTION;
 
     float new_vx_1 = ball1->vx - p * normal_x;
     float new_vy_1 = ball1->vy - p * normal_y;
@@ -137,27 +159,50 @@ void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc)
     // only balls not pocketed
     for (int i = 0; i < BALL_COUNT; i++)
     {
-        if ((*balls)[i].pocketed)
+        Ball *ball = &(*balls)[i];
+
+        if (ball->pocketed)
             continue;
-        if ((*balls)[i].x + BALL_RADIUS >= SCREEN_WIDTH - WALL_PADDING || (*balls)[i].x - BALL_RADIUS <= WALL_PADDING)
+
+        // left wall
+        if (ball->pos.x - BALL_RADIUS <= walls[2].start.x && ball->vx < 0.0f)
         {
-            (*balls)[i].vx *= -1;
+            ball->pos.x = walls[2].start.x + BALL_RADIUS;
+            ball->vx = -ball->vx * WALL_RESTITUTION;
         }
 
-        if ((*balls)[i].y + BALL_RADIUS >= SCREEN_HEIGHT - WALL_PADDING || (*balls)[i].y - BALL_RADIUS <= WALL_PADDING)
+        // right wall
+        if (ball->pos.x + BALL_RADIUS >= walls[3].start.x && ball->vx > 0.0f)
         {
-            (*balls)[i].vy *= -1;
+            ball->pos.x = walls[3].start.x - BALL_RADIUS;
+            ball->vx = -ball->vx * WALL_RESTITUTION;
         }
+
+        // top wall
+        if (ball->pos.y - BALL_RADIUS <= walls[0].start.y && ball->vy < 0.0f)
+        {
+            ball->pos.y = walls[0].start.y + BALL_RADIUS;
+            ball->vy = -ball->vy * WALL_RESTITUTION;
+        }
+
+        // bottom wall
+        if (ball->pos.y + BALL_RADIUS >= walls[1].start.y && ball->vy > 0.0f)
+        {
+            ball->pos.y = walls[1].start.y - BALL_RADIUS;
+            ball->vy = -ball->vy * WALL_RESTITUTION;
+        }
+
+        // ball collisions
         for (int j = i + 1; j < BALL_COUNT; j++)
         {
             float x1, x2, y1, y2;
-            x1 = (*balls)[i].x;
-            x2 = (*balls)[j].x;
-            y1 = (*balls)[i].y;
-            y2 = (*balls)[j].y;
+            x1 = (*balls)[i].pos.x;
+            x2 = (*balls)[j].pos.x;
+            y1 = (*balls)[i].pos.y;
+            y2 = (*balls)[j].pos.y;
             if (sq_distance(x1, y1, x2, y2) <= (BALL_DIAMETER * BALL_DIAMETER))
             {
-                if ((*balls)[i].num == 0 && *fc == NONE)
+                if ((*balls)[i].num == 0 && *fc == TYPE_NONE)
                 {
                     *fc = (*balls)[j].type;
                 }
@@ -168,34 +213,40 @@ void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc)
     return;
 }
 
-void check_pockets(Ball (*balls)[BALL_COUNT], enum GameState gs, enum Type turn)
+void check_pockets(Ball (*balls)[BALL_COUNT], enum GameState *gs, enum Type *turn)
 {
     for (int i = 0; i < BALL_COUNT; ++i)
     {
-        if ((*balls)[i].pocketed)
+
+        Ball *ball = &(*balls)[i];
+
+        if (ball->pocketed)
             continue;
 
         for (int j = 0; j < 6; ++j)
         {
-            float dx = (*balls)[i].x - pockets[j].x;
-            float dy = (*balls)[i].y - pockets[j].y;
+
+            Pocket pocket = pockets[j];
+
+            float dx = ball->pos.x - pockets[j].pos.x;
+            float dy = ball->pos.y - pockets[j].pos.y;
             float dist_squared = dx * dx + dy * dy;
 
-            if (dist_squared <= BALL_RADIUS * BALL_RADIUS)
+            if (dist_squared <= pocket.radius * pocket.radius)
             {
-                handle_pocket(turn, &(*balls)[i], gs);
+                handle_pocket(turn, ball, gs);
                 break;
             }
         }
     }
 }
 
-void handle_pocket(enum Type turn, Ball *pocketed, enum GameState gs)
+void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *gs)
 {
-    if (pocketed->type == NONE)
+    if (pocketed->type == TYPE_NONE)
     {
-        pocketed->x = 375;
-        pocketed->y = 200;
+        pocketed->pos.x = 375;
+        pocketed->pos.y = 200;
         pocketed->pocketed = false;
     }
     else
@@ -203,15 +254,15 @@ void handle_pocket(enum Type turn, Ball *pocketed, enum GameState gs)
 
         pocketed->pocketed = true;
 
-        if (turn == NONE)
+        if (*turn == TYPE_NONE)
         {
 
-            turn = pocketed->type;
+            *turn = pocketed->type;
         }
-        else if (turn != pocketed->type)
+        else if (*turn != pocketed->type)
         {
-            gs = HANDBALL;
-            turn = turn == SOLID ? STRIPES : SOLID;
+            *gs = HANDBALL;
+            *turn = turn == TYPE_SOLID ? TYPE_STRIPES : TYPE_SOLID;
         }
     }
 }
@@ -221,7 +272,7 @@ void draw_balls(Ball (*balls)[BALL_COUNT])
     // only balls not pocketed
     for (int i = 0; i < BALL_COUNT; i++)
     {
-        DrawCircle((*balls)[i].x, (*balls)[i].y, BALL_RADIUS, WHITE);
+        DrawCircle((*balls)[i].pos.x, (*balls)[i].pos.y, BALL_RADIUS, WHITE);
     }
 
     return;
@@ -242,15 +293,6 @@ bool is_moving(Ball (*balls)[BALL_COUNT])
     return false;
 }
 
-bool in_bounds(int x, int y)
-{
-    if ((x + BALL_RADIUS >= SCREEN_WIDTH - WALL_PADDING || x - BALL_RADIUS <= WALL_PADDING) || (y + BALL_RADIUS >= SCREEN_HEIGHT - WALL_PADDING || y - BALL_RADIUS <= WALL_PADDING))
-    {
-        return false;
-    }
-    return true;
-}
-
 void hit_ball(Ball *white_ball, float force_x, float force_y)
 {
     printf("ball hit");
@@ -267,10 +309,10 @@ void draw_stick(Stick *stick)
     struct Vector2 start;
     struct Vector2 end;
 
-    start.x = stick->start_x;
-    start.y = stick->start_y;
-    end.x = stick->end_x;
-    end.y = stick->end_y;
+    start.x = stick->start_pos.x;
+    start.y = stick->start_pos.y;
+    end.x = stick->end_pos.x;
+    end.y = stick->end_pos.y;
 
     DrawLineEx(start, end, 4.0, WHITE);
 
@@ -285,23 +327,23 @@ void set_stick(Stick *stick, float mouse_x, float mouse_y, float wb_x, float wb_
     float diff_x = mouse_x - wb_x;
     float diff_y = mouse_y - wb_y;
 
-    if (dist <= BALL_RADIUS)
+    if (dist <= BALL_RADIUS * 1.2)
     {
         // set angle of the shot
         stick->normal_x = diff_x / dist;
         stick->normal_y = diff_y / dist;
-        stick->start_x = wb_x + stick->normal_x * BALL_RADIUS;
-        stick->start_y = wb_y + stick->normal_y * BALL_RADIUS;
-        stick->end_x = wb_x - stick->normal_x * -STICK_LENGTH;
-        stick->end_y = wb_y - stick->normal_y * -STICK_LENGTH;
+        stick->start_pos.x = wb_x + stick->normal_x * BALL_RADIUS;
+        stick->start_pos.y = wb_y + stick->normal_y * BALL_RADIUS;
+        stick->end_pos.x = wb_x - stick->normal_x * -STICK_LENGTH;
+        stick->end_pos.y = wb_y - stick->normal_y * -STICK_LENGTH;
     }
     else
     {
         // set power of the shot
-        stick->start_x = wb_x + stick->normal_x * BALL_RADIUS + stick->normal_x * dist;
-        stick->start_y = wb_y + stick->normal_y * BALL_RADIUS + stick->normal_y * dist;
-        stick->end_x = wb_x - stick->normal_x * -STICK_LENGTH + stick->normal_x * dist;
-        stick->end_y = wb_y - stick->normal_y * -STICK_LENGTH + stick->normal_y * dist;
+        stick->start_pos.x = wb_x + stick->normal_x * BALL_RADIUS + stick->normal_x * dist;
+        stick->start_pos.y = wb_y + stick->normal_y * BALL_RADIUS + stick->normal_y * dist;
+        stick->end_pos.x = wb_x - stick->normal_x * -STICK_LENGTH + stick->normal_x * dist;
+        stick->end_pos.y = wb_y - stick->normal_y * -STICK_LENGTH + stick->normal_y * dist;
     }
 
     return;
@@ -310,9 +352,9 @@ void set_stick(Stick *stick, float mouse_x, float mouse_y, float wb_x, float wb_
 int main(void)
 {
 
-    enum GameState game_state = HIT;
-    enum Type first_collision = NONE;
-    enum Type turn = NONE;
+    enum GameState game_state = NOT_HIT;
+    enum Type first_collision = TYPE_NONE;
+    enum Type turn = TYPE_NONE;
 
     float dt = 1.0 / FPS;
 
@@ -332,7 +374,7 @@ int main(void)
 
     UnloadImage(img);
 
-    SetTargetFPS(80);
+    SetTargetFPS(60);
 
     while (!WindowShouldClose())
     {
@@ -348,10 +390,10 @@ int main(void)
             {
                 stick.hide = false;
 
-                set_stick(&stick, mouse.x, mouse.y, (*balls)[0].x, (*balls)[0].y);
+                set_stick(&stick, mouse.x, mouse.y, (*balls)[0].pos.x, (*balls)[0].pos.y);
             }
 
-            float sq_dist = sq_distance(mouse.x, mouse.y, (*balls)[0].x, (*balls)[0].y);
+            float sq_dist = sq_distance(mouse.x, mouse.y, (*balls)[0].pos.x, (*balls)[0].pos.y);
             if (IsMouseButtonReleased(0) && sq_dist > BALL_RADIUS * BALL_RADIUS)
             {
                 hit_ball(&(*balls)[0], -stick.normal_x * sq_dist, -stick.normal_y * sq_dist);
@@ -362,26 +404,23 @@ int main(void)
             // change state when ball hit
 
             // set first_collision to NONE
-            first_collision = NONE;
+
+            first_collision = TYPE_NONE;
             break;
         case HIT:
-            // set first collision if collision happens
-            // update ball positions
-            // check and handle collisions
-            // TODO: generalized function to position checking
 
-            check_collisions(balls, &first_collision);
-            check_pockets(balls, game_state, turn);
             update_balls(balls, dt);
+            check_pockets(balls, &game_state, &turn);
+            check_collisions(balls, &first_collision);
+
             // change state to NOT_HIT if no handball
             // change state to HANDBALL if handball
-            // TODO: handball
             if (!is_moving(balls))
             {
-                if ((first_collision != turn && turn != NONE) || first_collision == NONE)
+                if ((first_collision != turn && turn != TYPE_NONE) || first_collision == TYPE_NONE)
                 {
                     game_state = HANDBALL;
-                    turn = turn == SOLID ? STRIPES : SOLID;
+                    turn = turn == TYPE_SOLID ? TYPE_STRIPES : TYPE_SOLID;
                 }
                 else
                 {
@@ -393,9 +432,9 @@ int main(void)
             // move ball input
             // change state when ball moved
 
-            (*balls)[0].x = mouse.x;
+            (*balls)[0].pos.x = mouse.x;
 
-            (*balls)[0].y = mouse.y;
+            (*balls)[0].pos.y = mouse.y;
 
             if (IsMouseButtonDown(0))
             {
