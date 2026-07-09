@@ -10,7 +10,7 @@
 #define SCREEN_HEIGHT 400
 
 #define BALL_COUNT 16
-#define BALL_DIAMETER 20.0f
+#define BALL_DIAMETER 25.0f
 #define BALL_RADIUS (BALL_DIAMETER / 2.0f)
 
 #define WALL_COUNT 4
@@ -42,8 +42,8 @@
 #define RACK_START_X (TABLE_LEFT + (((TABLE_RIGHT - TABLE_LEFT) * 3.0f) / 4.0f))
 #define RACK_START_Y TABLE_CENTER_Y
 
-#define RACK_STEP_X 18.0f
-#define RACK_STEP_Y 11.0f
+#define RACK_STEP_X BALL_RADIUS * 1.8f
+#define RACK_STEP_Y BALL_RADIUS * 1.1f
 
 enum Type
 {
@@ -91,18 +91,23 @@ typedef struct Ball
 {
     int num;
     enum Type type;
+    Color color;
+    bool pocketed;
 
     Vec pos;
 
+    // velocity
     float vx;
     float vy;
 
-    float av;
+    // acceleration
     float ax;
     float ay;
-    Color color;
 
-    bool pocketed;
+    // rotation
+    float rx;
+    float ry;
+
 } Ball;
 
 typedef struct Stick
@@ -137,13 +142,13 @@ static const Wall walls[WALL_COUNT] = {
 };
 
 static const Pocket pockets[POCKET_COUNT] = {
-    {{34.0f, 29.0f}, 18.0f},  // top-left
-    {{375.0f, 16.0f}, 18.0f}, // top-middle
-    {{722.0f, 26.0f}, 18.0f}, // top-right
+    {{34.0f, 29.0f}, BALL_RADIUS * 1.8f},  // top-left
+    {{375.0f, 20.0f}, BALL_RADIUS * 1.8f}, // top-middle
+    {{722.0f, 26.0f}, BALL_RADIUS * 1.8f}, // top-right
 
-    {{32.0f, 367.0f}, 18.0f},  // bottom-left
-    {{376.0f, 379.0f}, 18.0f}, // bottom-middle
-    {{720.0f, 369.0f}, 18.0f}, // bottom-right
+    {{32.0f, 371.0f}, BALL_RADIUS * 1.8f},  // bottom-left
+    {{376.0f, 369.0f}, BALL_RADIUS * 1.8f}, // bottom-middle
+    {{720.0f, 369.0f}, BALL_RADIUS * 1.8f}, // bottom-right
 };
 
 Color get_ball_color(int num);
@@ -156,8 +161,8 @@ void update_balls(Ball (*balls)[BALL_COUNT], float dt);
 void handle_ball_collision(Ball *ball1, Ball *ball2);
 void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc);
 
-void check_pockets(Ball (*balls)[BALL_COUNT], enum GameState *gs, enum Type *turn);
-void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *gs, Ball (*balls)[BALL_COUNT]);
+void check_pockets(Ball (*balls)[BALL_COUNT], enum GameState *new_state, enum Type *turn);
+void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *new_state, Ball (*balls)[BALL_COUNT]);
 
 void render_balls(Ball (*balls)[BALL_COUNT]);
 void render_stick(Stick *stick);

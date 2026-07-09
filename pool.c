@@ -57,9 +57,11 @@ Ball init_ball(int num, enum Type type, float x, float y)
     b.vx = 0.0f;
     b.vy = 0.0f;
 
-    b.av = 0.0f;
     b.ax = 0.0f;
     b.ay = 0.0f;
+
+    b.rx = 0.0f;
+    b.ry = 0.0f;
 
     b.color = get_ball_color(num);
 
@@ -258,7 +260,7 @@ void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc)
     return;
 }
 
-void check_pockets(Ball (*balls)[BALL_COUNT], enum GameState *gs, enum Type *turn)
+void check_pockets(Ball (*balls)[BALL_COUNT], enum GameState *new_state, enum Type *turn)
 {
     for (int i = 0; i < BALL_COUNT; ++i)
     {
@@ -279,7 +281,7 @@ void check_pockets(Ball (*balls)[BALL_COUNT], enum GameState *gs, enum Type *tur
 
             if (dist_squared <= pocket.radius * pocket.radius)
             {
-                handle_pocket(turn, ball, gs, balls);
+                handle_pocket(turn, ball, new_state, balls);
                 break;
             }
         }
@@ -298,7 +300,7 @@ void declare_win(enum Type *turn, enum GameState *gs)
     }
 }
 
-void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *gs, Ball (*balls)[BALL_COUNT])
+void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *new_state, Ball (*balls)[BALL_COUNT])
 {
 
     if (pocketed->type == TYPE_EIGHT)
@@ -309,21 +311,20 @@ void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *gs, Ball (*b
 
             if (ball->type == *turn && !ball->pocketed)
             {
-                switch_turn(turn);
-                declare_win(turn, gs);
+
+                *new_state = *turn == TYPE_STRIPES ? WIN_SOLID : WIN_SOLID;
             }
         }
 
-        declare_win(turn, gs);
+        *new_state = *turn == TYPE_STRIPES ? WIN_STRIPE : WIN_SOLID;
     }
 
     if (pocketed->type == TYPE_CUE)
     {
-        pocketed->pos.x = 375;
-        pocketed->pos.y = 200;
+
         pocketed->pocketed = false;
 
-        *gs = HANDBALL;
+        *new_state = HANDBALL;
 
         switch_turn(turn);
     }
@@ -338,9 +339,20 @@ void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *gs, Ball (*b
         }
         else if (*turn != pocketed->type)
         {
-            *gs = HANDBALL;
+            *new_state = HANDBALL;
             switch_turn(turn);
         }
+    }
+}
+
+void draw_pockets()
+{
+    for (int i = 0; i < POCKET_COUNT; i++)
+    {
+        DrawCircleV(
+            (Vector2){pockets[i].pos.x, pockets[i].pos.y},
+            pockets[i].radius,
+            RAYWHITE);
     }
 }
 
@@ -352,6 +364,37 @@ void draw_balls(Ball (*balls)[BALL_COUNT])
 
         if (ball->pocketed)
             continue;
+
+        switch (ball->type)
+        {
+        case TYPE_STRIPES:
+            DrawCircleV(
+                (Vector2){ball->pos.x, ball->pos.y},
+                BALL_RADIUS,
+                ball->color);
+            break;
+
+        case TYPE_SOLID:
+            DrawCircleV(
+                (Vector2){ball->pos.x, ball->pos.y},
+                BALL_RADIUS,
+                ball->color);
+            break;
+
+        case TYPE_EIGHT:
+            DrawCircleV(
+                (Vector2){ball->pos.x, ball->pos.y},
+                BALL_RADIUS,
+                ball->color);
+            break;
+
+        default:
+            DrawCircleV(
+                (Vector2){ball->pos.x, ball->pos.y},
+                BALL_RADIUS,
+                ball->color);
+            break;
+        }
 
         DrawCircleV(
             (Vector2){ball->pos.x, ball->pos.y},
@@ -448,6 +491,7 @@ int main(void)
 {
 
     enum GameState game_state = NOT_HIT;
+    enum GameState new_state = NOT_HIT;
     enum Type first_collision = TYPE_NONE;
     enum Type turn = TYPE_NONE;
 
@@ -500,21 +544,21 @@ int main(void)
         case HIT:
 
             update_balls(balls, dt);
-            check_pockets(balls, &game_state, &turn);
+            check_pockets(balls, &new_state, &turn);
             check_collisions(balls, &first_collision);
 
             // change state to NOT_HIT if no handball
             // change state to HANDBALL if handball
             if (!is_moving(balls))
             {
+
                 if ((first_collision != turn && turn != TYPE_NONE) || first_collision == TYPE_NONE)
                 {
                     game_state = HANDBALL;
                 }
-                else
-                {
-                    game_state = NOT_HIT;
-                }
+
+                game_state = new_state;
+
                 switch_turn(&turn);
             }
             break;
@@ -549,7 +593,9 @@ int main(void)
         BeginDrawing();
         // draw board
         // draw balls
+
         draw_table(texture);
+        draw_pockets();
         draw_balls(balls);
         draw_stick(&stick);
 
