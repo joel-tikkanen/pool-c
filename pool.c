@@ -109,21 +109,35 @@ void init_balls(Ball (*balls)[BALL_COUNT])
 
 void update_balls(Ball (*balls)[BALL_COUNT], float dt)
 {
-    // only balls not pocketed
     for (int i = 0; i < BALL_COUNT; i++)
     {
-        (*balls)[i].pos.x += (*balls)[i].vx * dt;
-        (*balls)[i].pos.y += (*balls)[i].vy * dt;
-        (*balls)[i].vx += (*balls)[i].ax * dt;
-        (*balls)[i].vy += (*balls)[i].ay * dt;
-        (*balls)[i].ax = FRICTION_PER_FRAME * -((*balls)[i].vx);
-        (*balls)[i].ay = FRICTION_PER_FRAME * -((*balls)[i].vy);
-        if (fabs((*balls)[i].vx) <= STOP_SPEED && fabs((*balls)[i].ax) <= STOP_SPEED)
-            (*balls)[i].vx = 0.0;
-        if (fabs((*balls)[i].vy) <= STOP_SPEED && fabs((*balls)[i].ay) <= STOP_SPEED)
-            (*balls)[i].vy = 0.0;
+        Ball *ball = &(*balls)[i];
+
+        if (ball->pocketed)
+            continue;
+
+        ball->pos.x += ball->vx * dt;
+        ball->pos.y += ball->vy * dt;
+
+        ball->vx += ball->ax * dt;
+        ball->vy += ball->ay * dt;
+
+        ball->rx += (ball->vx / BALL_RADIUS) * dt;
+        ball->ry += (ball->vy / BALL_RADIUS) * dt;
+
+        ball->ax = -ball->vx * FRICTION_PER_FRAME;
+        ball->ay = -ball->vy * FRICTION_PER_FRAME;
+
+        if (fabsf(ball->vx) <= STOP_SPEED && fabsf(ball->ax) <= STOP_SPEED)
+        {
+            ball->vx = 0.0f;
+        }
+
+        if (fabsf(ball->vy) <= STOP_SPEED && fabsf(ball->ay) <= STOP_SPEED)
+        {
+            ball->vy = 0.0f;
+        }
     }
-    return;
 }
 
 float sq_distance(float x1, float y1, float x2, float y2)
@@ -429,6 +443,11 @@ void hit_ball(Ball *white_ball, float force_x, float force_y)
     white_ball->vx = force_x * 0.05;
     white_ball->vy = force_y * 0.05;
     return;
+}
+
+void draw_striped_ball(Ball *ball)
+{
+    float speed = sqrtf(ball->vx * ball->vx + ball->vy * ball->vy);
 }
 
 void draw_stick(Stick *stick)
