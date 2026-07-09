@@ -370,6 +370,30 @@ void draw_pockets()
     }
 }
 
+void draw_ball_number(Ball *ball)
+{
+    if (ball->num == 0)
+        return;
+
+    char text[4];
+    snprintf(text, sizeof(text), "%d", ball->num);
+
+    int fontSize = 9;
+    int textWidth = MeasureText(text, fontSize);
+
+    DrawCircleV(
+        (Vector2){ball->pos.x, ball->pos.y},
+        BALL_RADIUS * 0.45f,
+        RAYWHITE);
+
+    DrawText(
+        text,
+        (int)(ball->pos.x - textWidth / 2),
+        (int)(ball->pos.y - fontSize / 2),
+        fontSize,
+        BLACK);
+}
+
 void draw_balls(Ball (*balls)[BALL_COUNT])
 {
     for (int i = 0; i < BALL_COUNT; i++)
@@ -379,41 +403,27 @@ void draw_balls(Ball (*balls)[BALL_COUNT])
         if (ball->pocketed)
             continue;
 
-        switch (ball->type)
+        float speed = sqrtf(ball->vx * ball->vx + ball->vy * ball->vy);
+
+        float markerX = ball->pos.x + sinf(ball->rx) * BALL_RADIUS * 0.45f;
+        float markerY = ball->pos.y + sinf(ball->ry) * BALL_RADIUS * 0.45f;
+
+        float dx = markerX - ball->pos.x;
+        float dy = markerY - ball->pos.y;
+
+        if (dx * dx + dy * dy < BALL_RADIUS * BALL_RADIUS * 0.5f)
         {
-        case TYPE_STRIPES:
-            DrawCircleV(
-                (Vector2){ball->pos.x, ball->pos.y},
-                BALL_RADIUS,
-                ball->color);
-            break;
-
-        case TYPE_SOLID:
-            DrawCircleV(
-                (Vector2){ball->pos.x, ball->pos.y},
-                BALL_RADIUS,
-                ball->color);
-            break;
-
-        case TYPE_EIGHT:
-            DrawCircleV(
-                (Vector2){ball->pos.x, ball->pos.y},
-                BALL_RADIUS,
-                ball->color);
-            break;
-
-        default:
-            DrawCircleV(
-                (Vector2){ball->pos.x, ball->pos.y},
-                BALL_RADIUS,
-                ball->color);
-            break;
+            // draw number / marker
         }
+
+        char text[4];
 
         DrawCircleV(
             (Vector2){ball->pos.x, ball->pos.y},
             BALL_RADIUS,
             ball->color);
+
+        draw_ball_number(ball);
     }
 }
 
@@ -443,11 +453,6 @@ void hit_ball(Ball *white_ball, float force_x, float force_y)
     white_ball->vx = force_x * 0.05;
     white_ball->vy = force_y * 0.05;
     return;
-}
-
-void draw_striped_ball(Ball *ball)
-{
-    float speed = sqrtf(ball->vx * ball->vx + ball->vy * ball->vy);
 }
 
 void draw_stick(Stick *stick)
