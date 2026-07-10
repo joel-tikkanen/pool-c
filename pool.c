@@ -150,9 +150,12 @@ float distance(float x1, float y1, float x2, float y2)
     return (float)sqrt(sq_distance(x1, y1, x2, y2));
 }
 
-bool in_bounds(int x, int y)
+bool in_bounds(float x, float y)
 {
-    return x >= TABLE_LEFT && x <= TABLE_RIGHT && y >= TABLE_TOP && y <= TABLE_BOTTOM;
+    return x >= TABLE_LEFT &&
+           x <= TABLE_RIGHT &&
+           y >= TABLE_TOP &&
+           y <= TABLE_BOTTOM;
 }
 
 void handle_ball_collision(Ball *ball1, Ball *ball2)
@@ -274,28 +277,28 @@ void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc)
     return;
 }
 
-void check_pockets(Ball (*balls)[BALL_COUNT], enum GameState *new_state, enum Type *turn)
+void check_pockets(Ball (*balls)[BALL_COUNT], enum GameState *new_state, enum Type *turn, bool *has_pocketed)
 {
     for (int i = 0; i < BALL_COUNT; ++i)
     {
-
         Ball *ball = &(*balls)[i];
 
         if (ball->pocketed)
             continue;
 
-        for (int j = 0; j < 6; ++j)
+        for (int j = 0; j < POCKET_COUNT; ++j)
         {
+            const Pocket *pocket = &pockets[j];
 
-            Pocket pocket = pockets[j];
-
-            float dx = ball->pos.x - pockets[j].pos.x;
-            float dy = ball->pos.y - pockets[j].pos.y;
+            float dx = ball->pos.x - pocket->pos.x;
+            float dy = ball->pos.y - pocket->pos.y;
             float dist_squared = dx * dx + dy * dy;
 
-            if (dist_squared <= pocket.radius * pocket.radius)
+            float catch_radius = pocket->radius + BALL_RADIUS * 0.35f;
+
+            if (dist_squared <= catch_radius * catch_radius)
             {
-                handle_pocket(turn, ball, new_state, balls);
+                handle_pocket(turn, ball, new_state, balls, has_pocketed);
                 break;
             }
         }
@@ -314,49 +317,48 @@ void declare_win(enum Type *turn, enum GameState *gs)
     }
 }
 
-void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *new_state, Ball (*balls)[BALL_COUNT])
+void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *new_state, Ball (*balls)[BALL_COUNT], bool *has_pocketed)
 {
+    if (pocketed->type == TYPE_CUE)
+    {
+        pocketed->vx = 0.0f;
+        pocketed->vy = 0.0f;
+        pocketed->ax = 0.0f;
+        pocketed->ay = 0.0f;
+
+        pocketed->pocketed = false;
+        *new_state = HANDBALL;
+        return;
+    }
+
+    pocketed->pocketed = true;
+    pocketed->vx = 0.0f;
+    pocketed->vy = 0.0f;
+    pocketed->ax = 0.0f;
+    pocketed->ay = 0.0f;
 
     if (pocketed->type == TYPE_EIGHT)
     {
-        for (int i = 0; i < BALL_COUNT; i++)
-        {
-            Ball *ball = &(*balls)[i];
-
-            if (ball->type == *turn && !ball->pocketed)
-            {
-
-                *new_state = *turn == TYPE_STRIPES ? WIN_SOLID : WIN_SOLID;
-            }
-        }
-
-        *new_state = *turn == TYPE_STRIPES ? WIN_STRIPE : WIN_SOLID;
+        declare_win(turn, new_state);
+        return;
     }
 
-    if (pocketed->type == TYPE_CUE)
+    if (*turn == TYPE_NONE)
     {
+        *turn = pocketed->type;
+        *has_pocketed = true;
+        *new_state = NOT_HIT;
+        return;
+    }
 
-        pocketed->pocketed = false;
-
+    if (*turn != pocketed->type)
+    {
         *new_state = HANDBALL;
-
-        switch_turn(turn);
+        return;
     }
-    else
-    {
 
-        pocketed->pocketed = true;
-
-        if (*turn == TYPE_NONE)
-        {
-            *turn = pocketed->type;
-        }
-        else if (*turn != pocketed->type)
-        {
-            *new_state = HANDBALL;
-            switch_turn(turn);
-        }
-    }
+    *has_pocketed = true;
+    *new_state = NOT_HIT;
 }
 
 void draw_pockets()
@@ -376,22 +378,35 @@ void draw_ball_number(Ball *ball)
         return;
 
     char text[4];
+
     snprintf(text, sizeof(text), "%d", ball->num);
 
     int fontSize = 9;
     int textWidth = MeasureText(text, fontSize);
 
-    DrawCircleV(
-        (Vector2){ball->pos.x, ball->pos.y},
-        BALL_RADIUS * 0.45f,
-        RAYWHITE);
+    float speed = sqrtf(ball->vx * ball->vx + ball->vy * ball->vy);
 
-    DrawText(
-        text,
-        (int)(ball->pos.x - textWidth / 2),
-        (int)(ball->pos.y - fontSize / 2),
-        fontSize,
-        BLACK);
+    float markerX = ball->pos.x + sinf(ball->rx) * BALL_RADIUS * 0.45f;
+    float markerY = ball->pos.y + sinf(ball->ry) * BALL_RADIUS * 0.45f;
+
+    float dx = markerX - ball->pos.x;
+    float dy = markerY - ball->pos.y;
+
+    if (dx * dx + dy * dy < BALL_RADIUS * BALL_RADIUS * 0.25f)
+    {
+        // draw number / marker
+        DrawCircleV(
+            (Vector2){markerX, markerY},
+            BALL_RADIUS * 0.45f,
+            RAYWHITE);
+
+        DrawText(
+            text,
+            (int)(markerX - textWidth / 2),
+            (int)(markerY - fontSize / 2),
+            fontSize,
+            BLACK);
+    }
 }
 
 void draw_balls(Ball (*balls)[BALL_COUNT])
@@ -402,21 +417,6 @@ void draw_balls(Ball (*balls)[BALL_COUNT])
 
         if (ball->pocketed)
             continue;
-
-        float speed = sqrtf(ball->vx * ball->vx + ball->vy * ball->vy);
-
-        float markerX = ball->pos.x + sinf(ball->rx) * BALL_RADIUS * 0.45f;
-        float markerY = ball->pos.y + sinf(ball->ry) * BALL_RADIUS * 0.45f;
-
-        float dx = markerX - ball->pos.x;
-        float dy = markerY - ball->pos.y;
-
-        if (dx * dx + dy * dy < BALL_RADIUS * BALL_RADIUS * 0.5f)
-        {
-            // draw number / marker
-        }
-
-        char text[4];
 
         DrawCircleV(
             (Vector2){ball->pos.x, ball->pos.y},
@@ -518,6 +518,7 @@ int main(void)
     enum GameState new_state = NOT_HIT;
     enum Type first_collision = TYPE_NONE;
     enum Type turn = TYPE_NONE;
+    bool has_pocketed = false;
 
     float dt = 1.0 / FPS;
 
@@ -563,16 +564,13 @@ int main(void)
                 game_state = HIT;
             }
 
-            first_collision = TYPE_NONE;
             break;
         case HIT:
 
             update_balls(balls, dt);
-            check_pockets(balls, &new_state, &turn);
+            check_pockets(balls, &new_state, &turn, &has_pocketed);
             check_collisions(balls, &first_collision);
 
-            // change state to NOT_HIT if no handball
-            // change state to HANDBALL if handball
             if (!is_moving(balls))
             {
 
@@ -580,10 +578,17 @@ int main(void)
                 {
                     game_state = HANDBALL;
                 }
+                else
+                {
+                    game_state = new_state;
+                }
 
-                game_state = new_state;
+                first_collision = TYPE_NONE;
 
-                switch_turn(&turn);
+                if (!has_pocketed)
+                    switch_turn(&turn);
+
+                has_pocketed = false;
             }
             break;
         case HANDBALL:

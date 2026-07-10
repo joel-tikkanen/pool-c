@@ -158,17 +158,38 @@ void init_balls(Ball (*balls)[BALL_COUNT]);
 
 void update_balls(Ball (*balls)[BALL_COUNT], float dt);
 
+float sq_distance(float x1, float y1, float x2, float y2);
+float distance(float x1, float y1, float x2, float y2);
+
+bool in_bounds(float x, float y);
+bool is_moving(Ball (*balls)[BALL_COUNT]);
+
 void handle_ball_collision(Ball *ball1, Ball *ball2);
-void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *fc);
+void check_collisions(Ball (*balls)[BALL_COUNT], enum Type *first_collision);
 
-void check_pockets(Ball (*balls)[BALL_COUNT], enum GameState *new_state, enum Type *turn);
-void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *new_state, Ball (*balls)[BALL_COUNT]);
+void check_pockets(
+    Ball (*balls)[BALL_COUNT],
+    enum GameState *new_state,
+    enum Type *turn,
+    bool *has_pocketed);
 
-void render_balls(Ball (*balls)[BALL_COUNT]);
-void render_stick(Stick *stick);
+void handle_pocket(
+    enum Type *turn,
+    Ball *pocketed,
+    enum GameState *new_state,
+    Ball (*balls)[BALL_COUNT],
+    bool *has_pockted);
+
+void declare_win(enum Type *turn, enum GameState *game_state);
 void switch_turn(enum Type *turn);
 
-bool in_bounds(int x, int y);
+void draw_pockets(void);
+void draw_ball_number(Ball *ball);
+void draw_balls(Ball (*balls)[BALL_COUNT]);
+void draw_table(Texture2D table_texture);
+void draw_stick(Stick *stick);
+
+void hit_ball(Ball *white_ball, float force_x, float force_y);
 
 void set_stick(
     Stick *stick,
@@ -176,5 +197,4 @@ void set_stick(
     float mouse_y,
     float wb_x,
     float wb_y);
-
 #endif
