@@ -474,10 +474,31 @@ void draw_balls(Ball (*balls)[BALL_COUNT])
         if (ball->pocketed)
             continue;
 
-        DrawCircleV(
-            (Vector2){ball->pos.x, ball->pos.y},
-            BALL_RADIUS,
-            ball->color);
+        if (ball->type == TYPE_STRIPES)
+        {
+            DrawCircleV(
+                (Vector2){ball->pos.x, ball->pos.y},
+                BALL_RADIUS,
+                WHITE);
+
+            struct Vector2 start;
+            struct Vector2 end;
+
+            start.x = (int)(ball->pos.x - BALL_RADIUS);
+            start.y = (int)(ball->pos.y);
+
+            end.x = (int)(ball->pos.x + BALL_RADIUS);
+            end.y = (int)(ball->pos.y);
+
+            DrawLineEx(start, end, BALL_RADIUS, ball->color);
+        }
+        else
+        {
+            DrawCircleV(
+                (Vector2){ball->pos.x, ball->pos.y},
+                BALL_RADIUS,
+                ball->color);
+        }
 
         draw_ball_number(ball);
     }
@@ -698,7 +719,7 @@ int main(void)
         // draw balls
 
         draw_table(texture);
-        draw_pockets();
+        // draw_pockets();
         draw_balls(balls);
         draw_stick(&stick);
 
