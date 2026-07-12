@@ -361,15 +361,71 @@ void handle_pocket(enum Type *turn, Ball *pocketed, enum GameState *new_state, B
     *new_state = NOT_HIT;
 }
 
-void draw_pockets()
+// void draw_pockets()
+// {
+//     for (int i = 0; i < POCKET_COUNT; i++)
+//     {
+//         DrawCircleV(
+//             (Vector2){pockets[i].pos.x, pockets[i].pos.y},
+//             pockets[i].radius,
+//             RAYWHITE);
+//     }
+// }
+
+RenderTexture2D create_ball_surface(Color color, int number, bool striped)
 {
-    for (int i = 0; i < POCKET_COUNT; i++)
+    RenderTexture2D surface = LoadRenderTexture(
+        BALL_SURFACE_WIDTH,
+        BALL_SURFACE_HEIGHT);
+
+    int w = BALL_SURFACE_WIDTH;
+    int h = BALL_SURFACE_HEIGHT;
+
+    BeginTextureMode(surface);
+
+    if (striped)
     {
-        DrawCircleV(
-            (Vector2){pockets[i].pos.x, pockets[i].pos.y},
-            pockets[i].radius,
-            RAYWHITE);
+        ClearBackground(RAYWHITE);
+
+        DrawRectangle(
+            0,
+            (int)(h * 0.35f),
+            w,
+            (int)(h * 0.30f),
+            color);
     }
+    else
+    {
+        ClearBackground(color);
+    }
+
+    if (number > 0)
+    {
+        float badgeRadius = h * 0.16f;
+        int fontSize = (int)(h * 0.18f);
+
+        char text[4];
+        snprintf(text, sizeof(text), "%d", number);
+
+        int textWidth = MeasureText(text, fontSize);
+
+        DrawCircle(
+            w / 2,
+            h / 2,
+            badgeRadius,
+            RAYWHITE);
+
+        DrawText(
+            text,
+            w / 2 - textWidth / 2,
+            h / 2 - fontSize / 2,
+            fontSize,
+            BLACK);
+    }
+
+    EndTextureMode();
+
+    return surface;
 }
 
 void draw_ball_number(Ball *ball)
@@ -511,6 +567,14 @@ void set_stick(Stick *stick, float mouse_x, float mouse_y, float wb_x, float wb_
     return;
 }
 
+void draw_modal()
+{
+
+    float width = GetScreenWidth() * 0.92, height = GetScreenHeight() * 0.83;
+
+    DrawRectangle(GetScreenWidth() / 2.0f - width / 2, GetScreenHeight() / 2.0f - height / 2, width, height, LIGHTGRAY);
+}
+
 int main(void)
 {
 
@@ -519,6 +583,10 @@ int main(void)
     enum Type first_collision = TYPE_NONE;
     enum Type turn = TYPE_NONE;
     bool has_pocketed = false;
+
+    bool show_modal = false;
+    bool show_win = false;
+    bool show_details = true;
 
     float dt = 1.0 / FPS;
 
@@ -543,6 +611,12 @@ int main(void)
     while (!WindowShouldClose())
     {
         mouse = GetMousePosition();
+
+        if (IsKeyPressed(KEY_I))
+        {
+            show_modal = !show_modal;
+        }
+
         switch (game_state)
         {
 
@@ -628,10 +702,18 @@ int main(void)
         draw_balls(balls);
         draw_stick(&stick);
 
-        DrawText(TextFormat("Current Game State: %s", gameStateNames[game_state]), 125, 50, 20, DARKGRAY);
-        DrawText(TextFormat("Current turn is: %s", typeNames[turn]), 125, 100, 20, DARKGRAY);
+        if (show_modal)
+        {
+            draw_modal();
 
-        DrawText(TextFormat("Current mouse position is: (%d, %d)", (int)mouse.x, (int)mouse.y), 125, 150, 20, DARKGRAY);
+            if (show_details)
+            {
+                DrawText(TextFormat("Current Game State: %s", gameStateNames[game_state]), 125, 50, 20, DARKGRAY);
+                DrawText(TextFormat("Current turn is: %s", typeNames[turn]), 125, 100, 20, DARKGRAY);
+
+                DrawText(TextFormat("Current mouse position is: (%d, %d)", (int)mouse.x, (int)mouse.y), 125, 150, 20, DARKGRAY);
+            }
+        }
 
         // draw stick
         ClearBackground(BLACK);
